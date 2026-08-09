@@ -1,0 +1,100 @@
+There are two types of System Design
+1. Backend System Design (used by Software Engineers)
+
+Topics include:
+
+URL Shortener
+WhatsApp
+Instagram
+YouTube
+Uber
+Chat Application
+API Gateway
+Load Balancer
+Caching
+Database Sharding
+Microservices
+Message Queues
+
+Typical interview question:
+
+Design WhatsApp.
+
+This is common for backend engineers.
+
+2. Data System Design (used by Data Engineers)
+
+Topics include:
+
+Design an ETL pipeline
+Design a Data Warehouse
+Design a Data Lake
+Design a Real-time Streaming System
+Design a Batch Processing Pipeline
+Design CDC (Change Data Capture)
+Design a Data Quality Framework
+Design a Metadata Management System
+Design a Data Catalog
+Design an Event-driven Architecture
+
+Typical interview question:
+
+Design a pipeline that processes 100 million orders every day.
+
+This is much more likely in Data Engineering interviews.
+
+-------------------------------------------------------------------
+What companies actually ask?
+Freshers (0–2 years)
+
+Usually:
+
+SQL
+Python or Java
+Data structures (basic)
+Databases
+ETL concepts
+Spark basics
+Airflow basics
+Cloud basics
+
+System design questions are usually simple, such as:
+
+How would you design an ETL pipeline?
+How would you ingest data from multiple APIs?
+How would you process daily sales files?
+How would you avoid duplicate data?
+How would you design a data warehouse?
+
+They are not expecting you to design Google's infrastructure.
+-----------------------------------------------------------------
+
+Experienced Data Engineers (3–5+ years)
+
+Then you may be asked:
+
+Design Netflix analytics platform
+Design Uber trip pipeline
+Design Amazon order pipeline
+Design CDC architecture
+Design a real-time fraud detection pipeline
+
+--------------------------------------------------------------
+
+Why did the Adobe SDE-3 say "Prepare System Design"?
+
+Because at companies like Adobe, Amazon, Microsoft, Walmart Global Tech, etc., engineers often collaborate across backend and data platforms. Even for a Data Engineer, understanding distributed systems is valuable.
+
+That doesn't necessarily mean you'll be interviewed like a backend engineer, but it does mean you should understand concepts such as:
+
+Scalability
+Availability
+Caching
+Load balancing
+Databases
+Distributed systems
+Messaging
+
+Those concepts apply to data platforms too.
+
+----------------------------------------------------------

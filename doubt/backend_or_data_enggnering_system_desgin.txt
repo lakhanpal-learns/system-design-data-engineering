@@ -1,0 +1,63 @@
+ What should you study?
+
+Since you're targeting Data Engineering, I'd follow this order:
+
+Phase 1 — Foundations
+Databases
+Networking basics
+APIs
+Linux
+Docker
+Distributed systems basics
+
+Phase 2 — Backend system design concepts
+Load Balancer
+Reverse Proxy
+Caching
+CDN
+Message Queue
+Database Replication
+Sharding
+Consistency
+CAP Theorem
+
+You don't need to become an expert, but you should understand what problem each solves and when it's used.
+
+Phase 3 — Data Engineering system design
+ETL pipelines
+Data Lake
+Data Warehouse
+Batch processing
+Streaming (Kafka)
+Airflow
+Spark architecture
+Lakehouse
+Data modelling
+CDC
+Partitioning
+Data quality
+Metadata
+
+Phase 4 — End-to-end projects
+
+Design systems like:
+
+Spotify Analytics Platform
+Amazon Order Analytics
+Digital Payment Analytics
+Credit Risk Pipeline
+Supply Chain Intelligence Platform (your current project)
+Real-time Fraud Detection
+
+Be able to explain:
+
+Where the data comes from
+How it's ingested
+Where it's stored
+How it's transformed
+How it's orchestrated
+How it's monitored
+How dashboards consume it
+How failures are handled
+
+Based on what you've told me previously, your Supply Chain Intelligence Platform is already a good foundation for learning Data Engineering system design. Instead of only implementing it, spend time drawing and explaining its architecture—why each component exists, how data flows through it, what happens if a service fails, and how it could scale. That's the type of reasoning interviewers are often looking for in entry-level Data Engineering interviews.
