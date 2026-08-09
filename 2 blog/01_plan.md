@@ -243,3 +243,49 @@ For each article, we'll create a study sheet with:
 
 This way, you're not just reading blogs—you'll be building a complete, structured Data Engineering System Design curriculum from real production systems. I think this approach will give you a much deeper understanding than reading articles in isolation.
 
+
+# An even better idea
+
+Instead of reading random blogs, let's build a curated curriculum of the best engineering articles ever written for Data Engineering System Design.
+
+For example:
+
+Module 1 – Storage
+Uber Hudi
+Netflix Iceberg
+Delta Lake architecture
+
+Module 2 – Streaming
+Uber Kafka
+LinkedIn Kafka
+Flink
+Spark Streaming
+
+Module 3 – Batch Processing
+Spark
+Airflow
+ETL architecture
+
+Module 4 – Data Lakehouse
+Databricks
+Uber
+Airbnb
+
+Module 5 – Metadata
+Data Catalog
+Lineage
+Governance
+
+Module 6 – Real Production Systems
+Uber Ride Pipeline
+Netflix Recommendation Pipeline
+Airbnb Analytics Platform
+Stripe Payment Events
+I think we can do something much better
+
+Instead of searching article by article, I can create a complete learning roadmap of around 100 carefully selected engineering blogs from Uber, Netflix, LinkedIn, Airbnb, Stripe, Databricks, Snowflake, Confluent, and others.
+
+The roadmap would be ordered from beginner to advanced, so every article teaches one new system design concept and builds on the previous ones. By the end, you'd have studied most of the important production patterns used by senior data engineers.
+
+Given your goal of becoming strong in Data Engineering HLD and LLD, I think this structured reading path would be far more effective than randomly picking articles.
+
