@@ -1,4 +1,4 @@
-# Building Data Pipelines At Facebook - How To Manage An Exabyte Data Warehouse
+# Building Data Pipelines At Facebook - How To Manage An Exabyte Data Warehouse (Data engineering at Meta: High-Level Overview of the internal tech stack)
 
 <!-- data engineering at meta high level overview of the internal tech stack (meta blog) -->
 
@@ -329,5 +329,991 @@ That's how you get both:
 
 This is exactly why technologies like **Apache Iceberg** are important in modern data platforms.
 
+
+# additional 03 
+
+Problem: Cross-Namespace Data Access
+
+Data is owned/stored in different namespaces, but a query needs tables from multiple namespaces.
+
+Namespace A
+  └── Table A
+
+Namespace B
+  └── Table B
+
+Query needs:
+Table A + Table B
+       ❌
+
+
+Solution: Cross-Namespace Replication
+
+Create a synchronized replica of one table in the other namespace.
+
+Namespace A
+  ├── Table A
+  └── Table B (replica)  ←──── Namespace B
+
+Now the query can run where both tables exist.
+
+What is it called?
+
+Cross-namespace table replication
+
+You can also describe the underlying idea as:
+
+Data replication — copying data to another location
+Data synchronization — keeping the copy updated
+Data locality — putting required data close to the workload
+Cross-namespace querying — the problem being addressed
+
+For your system-design notes, I'd write:
+
+Problem: Cross-namespace data access
+Solution: Cross-namespace table replication with automatic synchronization.
+
+# problem 2 
+### Problem
+
+A data warehouse table can contain **billions or trillions of rows**.
+
+If a query asks for only recent data, the system would have to scan a huge amount of unnecessary data.
+
+For example:
+
+```text
+posts table
+├── 2026-08-08 → millions of rows
+├── 2026-08-09 → millions of rows
+├── 2026-08-10 → millions of rows
+└── ... → years of data
+```
+
+Query:
+
+```sql
+WHERE ds = '2026-08-10'
+```
+
+Without partitioning, the system may need to scan a large portion of the table.
+
+### Solution
+
+**Partition the table** using a column such as `ds` (date).
+
+```text
+posts
+├── ds=2026-08-08
+├── ds=2026-08-09
+└── ds=2026-08-10
+```
+
+When the query asks for:
+
+```sql
+WHERE ds = '2026-08-10'
+```
+
+the system can **skip the other partitions** and read only the required one.
+
+This is called **partition pruning**.
+
+### Result
+
+**Less data scanned → faster queries → lower compute/storage-processing cost.**
+
+**Problem:** Huge tables cause expensive and slow scans.
+**Solution:** Partition tables so the system can skip irrelevant data (**partition pruning**).
+
+<!-- you can more than 1 partion columns  -->
+
+<!-- In real data warehouses/data lakes, a partition is a logical grouping of data, and that partition may contain one or many physical files. -->
+
+TABLE
+  ↓
+PARTITIONS
+  ↓
+FILES
+
+In a data warehouse
+
+Imagine:
+
+posts table
+│
+├── Partition: ds=2026-08-09
+│      ├── file1.parquet
+│      ├── file2.parquet
+│      └── file3.parquet
+│
+└── Partition: ds=2026-08-10
+       ├── file4.parquet
+       ├── file5.parquet
+       └── file6.parquet
+
+Here:
+
+Partition = logical organization/grouping.
+
+File = actual physical data stored on disk/object storage.
+
+Why multiple files?
+
+Because the data could be huge.
+
+Suppose ds=2026-08-10 contains 10 TB of data.
+
+You don't want one gigantic 10-TB file.
+
+You might split it:
+
+2026-08-10 partition
+│
+├── 1 GB file
+├── 1 GB file
+├── 1 GB file
+├── ...
+└── 1 GB file
+
+Now many workers can read different files in parallel.
+
+Worker 1 → file 1
+Worker 2 → file 2
+Worker 3 → file 3
+Worker 4 → file 4
+
+That's much better for large-scale processing.
+
+# Data Retention
+**Problem**
+
+Data continuously grows over time. If we keep all data forever, storage becomes expensive and the system has to manage a huge amount of unnecessary old data.
+
+**Solution**
+
+Use a data retention policy that defines how long data should be kept.
+
+For example, if a table has a 90-day retention period:
+
+New data ───────────────→ 90 days
+                              ↓
+                       Retention limit
+                              ↓
+                    Archive or Delete
+
+When a partition becomes older than 90 days, the system automatically:
+
+Deletes it if it is no longer needed, or
+Archives it to cheaper cold storage if it may be needed later.
+Key Concept
+
+Data Retention = Automatically controlling how long data remains in the system.
+
+# Data Ownership and On-Call
+
+### Problem
+
+When there is a problem with a table, it can be unclear:
+
+* **Who owns this data?**
+* **Who should fix the problem?**
+* **Who should answer questions about the data?**
+
+For example:
+
+```text
+Table: user_orders
+
+Something is wrong
+       ↓
+Who should we contact? ❓
+```
+
+### Solution
+
+Every table is assigned to an **on-call group**.
+
+The on-call group identifies the **team responsible for that data**.
+
+```text
+user_orders
+     ↓
+On-call group
+     ↓
+Data Engineering Team
+     ↓
+Responsible for the table
+```
+
+If someone finds incorrect data or has a question, they know **exactly which team to contact**.
+
+### Key Concept
+
+**On-call group = The team responsible for a dataset and the first point of contact when there is a problem or question.**
+
+
+
+# How does data get INTO the warehouse?
+
+![alt text](image-2.png)
+
+Think of the **data warehouse as a big central storage place**.
+
+Different kinds of data need to enter that warehouse. The image gives **3 common ways**.
+
+---
+
+## 1. Data Workflows / Pipelines
+
+This means a **program/pipeline collects or calculates data and writes it into the warehouse**.
+
+Example:
+
+```text
+Facebook tables
+      ↓
+Data pipeline
+      ↓
+Data Warehouse
+```
+
+Suppose Facebook already has:
+
+```text
+users
+posts
+likes
+```
+
+A pipeline might calculate:
+
+> "How many likes did each user receive yesterday?"
+
+Then it writes the result into:
+
+```text
+user_daily_likes
+```
+
+So:
+
+**Pipeline = code/workflow that moves or transforms data and puts it into the warehouse.**
+
+---
+
+## 2. Logs
+
+Applications generate **logs** whenever users or systems do something.
+
+For example, when you use Facebook:
+
+```text
+You open Facebook
+      ↓
+You click a post
+      ↓
+You like it
+      ↓
+You watch a video
+```
+
+The application can generate events/logs:
+
+```text
+user_id = 123
+event = "like"
+post_id = 456
+time = 10:32
+```
+
+Those logs can eventually be written into the warehouse:
+
+```text
+Application
+     ↓
+Logs / Events
+     ↓
+Warehouse
+```
+
+The image mentions two types:
+
+**Server-side logging** → event is recorded by Facebook's backend.
+
+**Client-side logging** → event is recorded by the app/browser/device.
+
+---
+
+## 3. Daily Snapshots
+
+This one is different.
+
+A **snapshot means taking a picture of the current state of something at a particular time**.
+
+Imagine Facebook has a production database containing users:
+
+```text
+user_id | name | country
+1       | John | USA
+2       | Alex | India
+```
+
+Every night, they can copy the current state into the warehouse:
+
+```text
+Snapshot: August 10
+
+user_id | name | country
+1       | John | USA
+2       | Alex | India
+```
+
+Tomorrow:
+
+```text
+Snapshot: August 11
+
+user_id | name | country
+1       | John | Canada
+2       | Alex | India
+3       | Mike | UK
+```
+
+Now you can compare:
+
+```text
+August 10 → What did the data look like?
+August 11 → What changed?
+```
+
+---
+
+## So remember these 3
+
+```text
+             DATA WAREHOUSE
+                   ↑
+        ┌──────────┼──────────┐
+        │          │          │
+    Pipelines     Logs     Snapshots
+        │          │          │
+   Processed    Events     Daily copy
+      data       /logs      of state
+```
+
+### In your Problem → Solution format:
+
+**Problem:** The warehouse needs data from many different sources and systems.
+
+**Solution:** Data is written into the warehouse through **data pipelines, application logs, and periodic snapshots**.
+
+That's what this whole section is trying to explain.
+
+
+## what is data swarm ?
+What is DataSwarm?
+
+DataSwarm is a data workflow/pipeline system developed at Facebook (Meta).
+
+Its job is to automate data pipelines.
+
+Think of it like:
+
+Source Tables
+     ↓
+DataSwarm Pipeline
+     ↓
+Process / Transform Data
+     ↓
+Warehouse Table
+
+DataSwarm = a system for defining and automatically running data workflows/pipelines that produce data in the warehouse.
+
+# Writing Data Pipelines
+
+The blog means:
+
+SQL = Business logic
+→ SQL defines what data to calculate/transform.
+
+Python = Orchestration
+→ Python controls when and in what order the SQL runs.
+
+## Real-life example: Facebook daily post analytics
+
+Imagine Facebook wants a table containing:
+
+How many likes each post received every day.
+
+Facebook already has a huge table:
+
+posts
+--------------------------------
+post_id
+user_id
+created_at
+
+and:
+
+likes
+--------------------------------
+user_id
+post_id
+liked_at
+
+They want to create:
+
+daily_post_likes
+--------------------------------
+date
+post_id
+like_count
+
+2. SQL does the business logic
+
+The actual calculation can be written in SQL:
+
+INSERT INTO daily_post_likes
+SELECT
+    DATE(liked_at) AS date,
+    post_id,
+    COUNT(*) AS like_count
+FROM likes
+WHERE DATE(liked_at) = CURRENT_DATE
+GROUP BY
+    DATE(liked_at),
+    post_id;
+
+This SQL answers:
+
+What should we calculate?
+
+It says:
+
+Take likes
+Take today's likes
+Group them by post
+Count the likes
+Store the result
+
+That's business logic.
+
+3. But SQL doesn't manage the whole pipeline
+
+Imagine this needs to happen every day at 2 AM.
+
+You need something to say:
+
+2 AM
+ ↓
+Check whether source data arrived
+ ↓
+Run SQL
+ ↓
+Check whether SQL succeeded
+ ↓
+Move to next task
+ ↓
+Notify team if something failed
+
+That's where Python/orchestration comes in.
+
+4. Python manages the workflow
+
+A simplified Python example:
+
+def daily_post_pipeline():
+
+    wait_for_likes_data()
+
+    run_sql("daily_post_likes.sql")
+
+    validate_result()
+
+    notify_success()
+
+Python isn't calculating the number of likes.
+
+It's saying:
+
+"Run this step, then this step, then this step."
+
+5. Real pipeline
+
+A real production pipeline might look like:
+
+                Python
+                  │
+                  ▼
+        Check source data
+                  │
+                  ▼
+             Run SQL
+                  │
+                  ▼
+          Validate result
+                  │
+                  ▼
+          Publish table
+                  │
+                  ▼
+          Send notification
+
+And the SQL might be:
+
+daily_post_likes.sql
+
+while Python controls it:
+
+pipeline.py
+6. Why separate SQL and Python?
+
+Because they solve different problems.
+
+SQL is good at:
+Filtering
+JOIN
+GROUP BY
+Aggregation
+Transformation
+Calculations
+
+Example:
+
+SELECT
+    post_id,
+    COUNT(*) AS likes
+FROM likes
+GROUP BY post_id;
+Python is good at:
+Scheduling
+Dependencies
+Retries
+Error handling
+Calling APIs
+Running multiple tasks
+Monitoring
+
+For example:
+
+extract_data()
+run_sql()
+validate_data()
+send_alert()
+
+## key idea
+
+                 DATA PIPELINE
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+        SQL                     Python
+          │                       │
+   Business Logic            Orchestration
+          │                       │
+   What to do              When/how to do it
+          │                       │
+   Transform data           Schedule
+   JOIN                     Dependencies
+   GROUP BY                 Retries
+   Calculate                Monitoring
+
+
+# how DataSwarm organizes and runs pipelines
+
+### 1. DataSwarm
+
+At Facebook, **DataSwarm** is a Python library/framework used for:
+
+* **Orchestration** → deciding what runs and in what order.
+* **Scheduling** → deciding when it runs.
+
+It was an internal predecessor to **Apache Airflow**.
+
+---
+
+### 2. Pipeline = DAG
+
+DataSwarm represents a pipeline as a **DAG (Directed Acyclic Graph)**.
+
+Don't worry about the name yet. Think of it as a **flow of tasks**:
+
+```text
+Get data
+   ↓
+Clean data
+   ↓
+Calculate metrics
+   ↓
+Save result
+```
+
+Each box is called an **operator**.
+
+```text
+Get data          → Operator 1
+Clean data        → Operator 2
+Calculate metrics → Operator 3
+Save result       → Operator 4
+```
+
+The complete flow is the **DAG**.
+
+### 3. Why "directed"?
+
+Because the flow has a direction:
+
+```text
+A → B → C
+```
+
+B depends on A, and C depends on B.
+
+### 4. Why "acyclic"?
+
+The flow **cannot create a loop**:
+
+```text
+A → B → C → A ❌
+```
+
+It must move forward:
+
+```text
+A → B → C → D ✅
+```
+
+### Key idea
+
+> **DataSwarm uses Python to define and schedule a DAG, and each operator represents one task in that pipeline.**
+
+This is basically the same core idea you'll see later with **Airflow DAGs and operators**.
+
+# different types of operators in DataSwarm 
+
+Remember:
+
+> **Operator = one task/step in a pipeline.**
+
+For example:
+
+```text
+Wait → Query → Check → Transfer → Notify
+```
+
+Each step is an operator.
+
+### 1. WaitFor Operator
+
+**Purpose:** Wait until required data arrives.
+
+Example:
+
+```text
+Wait for today's likes data
+          ↓
+Data arrives
+          ↓
+Continue pipeline
+```
+
+It prevents the next task from running before the required data is available.
+
+---
+
+### 2. Query Operator
+
+**Purpose:** Run SQL/query on the warehouse.
+
+Example:
+
+```sql
+SELECT post_id, COUNT(*)
+FROM likes
+GROUP BY post_id;
+```
+
+The operator can run this using engines such as **Presto or Spark**.
+
+---
+
+### 3. Data Quality Operator
+
+**Purpose:** Check whether the data is correct.
+
+For example:
+
+```text
+Check:
+✓ No NULL user_id
+✓ No duplicate IDs
+✓ Row count > 0
+✓ Valid dates
+```
+
+If the check fails:
+
+```text
+Pipeline
+   ↓
+Quality Check ❌
+   ↓
+STOP / ALERT
+```
+
+---
+
+### 4. Data Transfer Operator
+
+**Purpose:** Move data from one system to another.
+
+```text
+System A
+   ↓
+Transfer Operator
+   ↓
+System B
+```
+
+For example, move processed data from one storage system to another.
+
+---
+
+### 5. Miscellaneous Operators
+
+These handle other tasks that don't fit the above categories.
+
+Examples:
+
+```text
+Send email
+Send chat notification
+Call an API
+Run a Python script
+```
+
+---
+
+### Real pipeline example
+
+A Facebook-style daily pipeline could be:
+
+```text
+WaitFor
+"Is today's likes data available?"
+        ↓
+Query
+"Calculate daily likes"
+        ↓
+Data Quality
+"Is the result valid?"
+        ↓
+Data Transfer
+"Move result to analytics table"
+        ↓
+Miscellaneous
+"Notify team that pipeline finished"
+```
+
+So the big idea is:
+
+> **DataSwarm provides different operators as building blocks, and you connect those operators to create a complete DAG/pipeline.**
+
+# **Predecessor = something that came before and influenced/replaced by something newer.**
+
+So when the blog says:
+
+> **DataSwarm is a predecessor to Airflow**
+
+It means:
+
+```text
+DataSwarm
+   ↓
+Earlier system
+   ↓
+Airflow
+   ↓
+Newer/generalized system
+```
+
+Facebook built **DataSwarm first** to orchestrate pipelines. Later, **Airflow** was developed with similar core ideas like **DAGs, operators, scheduling, and dependencies**.
+
+So simply:
+
+> **DataSwarm was an earlier system whose ideas came before Airflow.**
+
+# code example 
+Yes bro. This code is showing a **simple DataSwarm pipeline with 3 steps**.
+
+Think of it as:
+
+```text
+Wait for data
+     ↓
+Process data → staging table
+     ↓
+Process again → final table
+```
+
+## 1. Schedule the pipeline
+
+```python
+config.set(schedule="@daily")
+```
+
+This means:
+
+> Run this pipeline **once every day**.
+
+---
+
+## 2. Wait for today's data
+
+```python
+wait_for_my_data_source = WaitForPartitionOperator(
+    table="my_data_source",
+    partition="ds=<DATEID>"
+)
+```
+
+This operator says:
+
+> **Don't start processing until today's data has arrived in `my_data_source`.**
+
+For example:
+
+```text
+my_data_source
+     ↓
+ds=2026-08-10  ← Is it available?
+     ↓
+YES → continue
+NO  → keep waiting
+```
+
+This is important because the pipeline shouldn't process data that hasn't arrived yet.
+
+---
+
+## 3. First processing step
+
+```python
+my_operator1 = PrestoOperator(
+    dep_list=[wait_for_my_data_source],
+```
+
+`dep_list` means **dependency**.
+
+It says:
+
+> `my_operator1` must wait for `wait_for_my_data_source` to finish.
+
+Then:
+
+```sql
+SELECT *
+FROM my_data_source
+WHERE ds='<DATEID>'
+```
+
+This SQL performs the **business logic**.
+
+The result is written into:
+
+```python
+create="my_staging_table",
+partition={"ds": "<DATEID>"}
+```
+
+So:
+
+```text
+my_data_source
+      ↓
+  Presto SQL
+      ↓
+my_staging_table
+```
+
+---
+
+## 4. Second processing step
+
+```python
+my_operator2 = PrestoOperator(
+    dep_list=[my_operator1],
+```
+
+Again, dependency.
+
+It says:
+
+> **Don't run operator 2 until operator 1 finishes.**
+
+Then it reads:
+
+```sql
+SELECT *
+FROM my_staging_table
+WHERE ds='<DATEID>'
+```
+
+and creates:
+
+```python
+create="my_table"
+```
+
+So the complete pipeline is:
+
+```text
+WaitForPartition
+       ↓
+my_data_source
+       ↓
+PrestoOperator 1
+       ↓
+my_staging_table
+       ↓
+PrestoOperator 2
+       ↓
+my_table
+```
+
+### The most important thing to understand
+
+There are **two different concepts here**:
+
+**Python/DataSwarm:**
+
+```text
+What runs first?
+What depends on what?
+When should it run?
+```
+
+**SQL:**
+
+```text
+What should happen to the data?
+```
+
+So this example perfectly demonstrates what we discussed earlier:
+
+> **Python/DataSwarm = orchestration**
+> **SQL/Presto = business/data transformation logic**.
+
+<!-- Presto is a distributed SQL query engine.
+
+It lets you use SQL to query very large amounts of data stored across systems like data lakes and warehouses. -->
+
+##  Our internal VSCode extensions process the pipeline definition on save and calculate the DAG:
+![alt text](image-3.png)
+
+If there is an error in any of the SQL statements, the custom linter will display a warning before even trying to run the pipeline. The same extensions also allow the data engineers to **schedule a test run of the new version using real input data**, writing the output to a temporary table.
+
+<!-- The linter checks the SQL before the pipeline runs: -->
 
 # 
