@@ -1,10 +1,7 @@
 # Building Data Pipelines At Facebook - How To Manage An Exabyte Data Warehouse (Data engineering at Meta: High-Level Overview of the internal tech stack)
 
-<!-- data engineering at meta high level overview of the internal tech stack (meta blog) -->
+# problem 1 Data Locality & Distributed Data Management
 
-#  problem 
-
-# problem 1 
 Sure. The problem is basically **data is spread across different physical locations**.
 
 Imagine Facebook's warehouse is not one building. It is like:
@@ -17,7 +14,7 @@ Now suppose a query needs data from different places.
 
 If the data is scattered randomly, the system has to **move huge amounts of data between locations**. That is slow and expensive.
 
-### Facebook's solution: Namespaces
+## Facebook's solution: Namespaces
 
 They group related tables together in the **same location**.
 
@@ -37,7 +34,7 @@ Namespace: Ads Data
 
 So if a query needs **User Data**, the related tables are already close together.
 
-### Simple idea
+## Simple idea
 
 ❌ **Without namespaces**
 
@@ -53,6 +50,28 @@ Lots of data movement → **slow**
 
 Related data stays together → **less data movement → faster queries**
 
+**Without good data placement:**
+
+users → India
+profiles → Canada
+activity → USA
+
+Query
+  ↓
+Move data between locations
+  ↓
+Expensive
+
+**With good placement:**
+
+User namespace → India
+
+users
+profiles
+activity
+   ↓
+Query locally
+
 ### The key problem
 
 > **How do we organize a huge distributed warehouse so that queries don't have to constantly move massive amounts of data between different locations?**
@@ -60,277 +79,7 @@ Related data stays together → **less data movement → faster queries**
 That's the important system-design idea here: **physical + logical partitioning to reduce data movement.**
 
 
-# additonal 01 
-![Distributed Database Architecture Diagram](image.png)
 
-## problems 
-### Problem 1: Primary region failure 💥
-
-**Problem:** If the primary region goes down, the data/service could become unavailable.
-
-**Solution:** Keep a replicated copy of the shard in a **secondary region**. If the primary fails, the secondary can take over.
-
----
-
-### Problem 2: Users are far away from the primary region 🌍
-
-**Problem:** Users in Europe or Asia would have to communicate with a database in the US, causing higher latency.
-
-**Solution:** Keep replicas in different geographic regions so users can access data **closer to them**.
-
----
-
-### Problem 3: Too many read requests 🚦
-
-**Problem:** Millions of users may request the same data. Sending every request directly to MySQL would overload it.
-
-**Solution:** Use **caches and followers** to distribute read traffic and reduce the load on MySQL.
-
----
-
-### Problem 4: Database reads are slow 🐌
-
-**Problem:** Going to MySQL for every request takes more time.
-
-**Solution:** Store frequently requested data in **cache**, allowing fast reads.
-
----
-
-### Problem 5: Cache contains old data ❌
-
-**Problem:** When data changes in MySQL, the old value may still exist in the cache.
-
-**Solution:** **Invalidate/update the cache** when a write happens so users don't receive stale data.
-
----
-
-### Problem 6: One region cannot handle everything 📈
-
-**Problem:** Facebook operates globally with enormous traffic. One region shouldn't have to handle all requests.
-
-**Solution:** Distribute data and traffic across **multiple regions, replicas, caches, and followers**.
-
----
-
-### 🎯 The main idea
-
-**Problem:** Facebook needs to serve enormous global traffic while keeping data available and fast.
-
-**Solution:**
-**Replication + multiple regions + caching + followers**
-
-That's the core architecture.
-
-# additonal 02 
-![alt text](image-1.png)
-
-## problem 01 
-This image is showing a very common **data architecture problem**:
-
-> **In theory, you want one central data platform. In reality, data gets scattered across different systems.**
-
-### 1. In an ideal world
-
-Imagine the company has one central **Apache Iceberg** data platform.
-
-Inside it:
-
-```text
-                 ICEBERG
-        ┌─────────────────────┐
-        │ Sales │ HR │ Marketing│
-        │ Ops   │ Core │ Data   │
-        └─────────────────────┘
-```
-
-All departments put their data into the **same platform**.
-
-Then different tools can access that same data:
-
-* Google BigQuery
-* Trino
-* Snowflake
-* Databricks
-
-So you have:
-
-> **One data storage layer → many tools can use it.**
-
-That's the dream.
-
----
-
-### 2. In reality 😅
-
-The data doesn't stay in one place.
-
-Instead:
-
-```text
-Iceberg
- ├── Sales
- └── Marketing
-
-Snowflake
- └── HR
-
-BigQuery
- └── Operations
-
-PostgreSQL
- └── European Sales
-```
-
-Now the company has **data silos**.
-
-For example, suppose you want:
-
-> **Total sales + HR employee information + European operations**
-
-You may need to query:
-
-```text
-Iceberg
-   +
-Snowflake
-   +
-BigQuery
-   +
-PostgreSQL
-```
-
-That's much more complicated.
-
----
-
-### Why does this happen?
-
-Different teams have different needs.
-
-For example:
-
-**HR team** might already use Snowflake.
-
-**Operations team** might have data in BigQuery.
-
-**European team** might have an old PostgreSQL database.
-
-**Data team** might use Iceberg/Databricks.
-
-Nobody wants to immediately migrate everything.
-
-So over time:
-
-```text
-New team → new tool
-Old system → stays
-Acquisition → brings another system
-Business requirement → another database
-```
-
-And eventually you get **data fragmentation**.
-
----
-
-### 🎯 The actual system-design problem
-
-**Problem:**
-
-> Data is spread across multiple storage systems and platforms, making it difficult to access, combine, govern, and analyze data consistently.
-
-**Ideal solution:**
-
-> Have a common data layer, such as Iceberg, where data is organized centrally while different compute/query engines can access it.
-
-### The important concept for you
-
-This image is really teaching:
-
-**Centralized data layer vs. data silos**
-
-## system desgin question 
-
-And this becomes an important **system-design trade-off**:
-
-> **How do we allow different teams and tools to work independently without creating a mess of disconnected data?**
-
-Bro, the answer is basically **“separate storage from compute.”** This is one of the most important ideas in modern data architecture.
-
-### Problem
-
-Different teams want to use different tools:
-
-* Analytics → Snowflake
-* Data engineering → Databricks
-* SQL users → Trino
-* Other workloads → BigQuery
-
-If every tool has its **own copy of the data**, you get:
-
-> duplicate data + inconsistent data + expensive movement + difficult governance.
-
-### Solution
-
-Create **one common data/storage layer** and let different tools access it.
-
-For example:
-
-```text
-                DATA STORAGE
-             Apache Iceberg
-                    │
-        ┌───────────┼───────────┐
-        ↓           ↓           ↓
-     Trino      Databricks   Snowflake
-        ↓           ↓           ↓
-      Team A      Team B      Team C
-```
-
-The key is:
-
-> **Teams can choose their own compute/query tool, but they don't need to create their own separate copy of the data.**
-
-### But how?
-
-Apache Iceberg acts as the **common table/storage layer**.
-
-It manages things like:
-
-* Where the data files are
-* Table schema
-* Partitions
-* Metadata
-* Table versions
-* Transactions
-
-Then different engines can understand and work with those tables.
-
-So:
-
-```text
-             One Data Layer
-                  ↓
-      ┌───────────┼───────────┐
-      ↓           ↓           ↓
-    Trino     Databricks   Snowflake
-```
-
-### The important architecture principle
-
-**Don't force every team to use the same compute engine.**
-
-Instead:
-
-> **Standardize the data layer, but allow flexibility in the compute layer.**
-
-That's how you get both:
-
-**Team independence + centralized data management.**
-
-This is exactly why technologies like **Apache Iceberg** are important in modern data platforms.
-
-
-# additional 03 
 
 Problem: Cross-Namespace Data Access
 
@@ -373,9 +122,7 @@ For your system-design notes, I'd write:
 Problem: Cross-namespace data access
 Solution: Cross-namespace table replication with automatic synchronization.
 
-# problem 2 
-### Problem
-
+# problem 2 Large-Scale Data Scanning & Partitioning
 A data warehouse table can contain **billions or trillions of rows**.
 
 If a query asks for only recent data, the system would have to scan a huge amount of unnecessary data.
@@ -389,6 +136,7 @@ posts table
 ├── 2026-08-10 → millions of rows
 └── ... → years of data
 ```
+---------------------------------------------------------------------------------------------------------
 
 Query:
 
@@ -397,6 +145,8 @@ WHERE ds = '2026-08-10'
 ```
 
 Without partitioning, the system may need to scan a large portion of the table.
+
+--------------------------------------------------------------------------------------------------------
 
 ### Solution
 
@@ -419,6 +169,8 @@ the system can **skip the other partitions** and read only the required one.
 
 This is called **partition pruning**.
 
+-------------------------------------------------------------------------------------------------------------------
+
 ### Result
 
 **Less data scanned → faster queries → lower compute/storage-processing cost.**
@@ -426,9 +178,9 @@ This is called **partition pruning**.
 **Problem:** Huge tables cause expensive and slow scans.
 **Solution:** Partition tables so the system can skip irrelevant data (**partition pruning**).
 
-<!-- you can more than 1 partion columns  -->
+**you can more than 1 partion columns**
 
-<!-- In real data warehouses/data lakes, a partition is a logical grouping of data, and that partition may contain one or many physical files. -->
+In real data warehouses/data lakes, a partition is a logical grouping of data, and that partition may contain one or many physical files.
 
 TABLE
   ↓
@@ -458,7 +210,9 @@ Partition = logical organization/grouping.
 
 File = actual physical data stored on disk/object storage.
 
-Why multiple files?
+-----------------------------------------------------------------------------------------------------------------
+
+**Why multiple files?**
 
 Because the data could be huge.
 
@@ -485,7 +239,10 @@ Worker 4 → file 4
 
 That's much better for large-scale processing.
 
+---------------------------------------------------------------------------------------------------------------------------
+
 # Data Retention
+
 **Problem**
 
 Data continuously grows over time. If we keep all data forever, storage becomes expensive and the system has to manage a huge amount of unnecessary old data.
@@ -510,6 +267,8 @@ Key Concept
 
 Data Retention = Automatically controlling how long data remains in the system.
 
+-----------------------------------------------------------------------------------------------------
+
 # Data Ownership and On-Call
 
 ### Problem
@@ -529,6 +288,7 @@ Something is wrong
        ↓
 Who should we contact? ❓
 ```
+---------------------------------------------------------------------------------------------------
 
 ### Solution
 
@@ -548,11 +308,13 @@ Responsible for the table
 
 If someone finds incorrect data or has a question, they know **exactly which team to contact**.
 
+----------------------------------------------------------------------------------------------------
+
 ### Key Concept
 
 **On-call group = The team responsible for a dataset and the first point of contact when there is a problem or question.**
 
-
+---------------------------------------------------------------------------------------------------------------------------------
 
 # How does data get INTO the warehouse?
 
@@ -562,7 +324,7 @@ Think of the **data warehouse as a big central storage place**.
 
 Different kinds of data need to enter that warehouse. The image gives **3 common ways**.
 
----
+--------------------------------------------------------------------------------------------------------------
 
 ## 1. Data Workflows / Pipelines
 
@@ -600,7 +362,7 @@ So:
 
 **Pipeline = code/workflow that moves or transforms data and puts it into the warehouse.**
 
----
+-------------------------------------------------------------------------------------------------------------
 
 ## 2. Logs
 
@@ -637,13 +399,15 @@ Logs / Events
 Warehouse
 ```
 
+----------------------------------------------------------------------------------------------------------------------
+
 The image mentions two types:
 
 **Server-side logging** → event is recorded by Facebook's backend.
 
 **Client-side logging** → event is recorded by the app/browser/device.
 
----
+-------------------------------------------------------------------------------------------------------------------------
 
 ## 3. Daily Snapshots
 
@@ -687,7 +451,7 @@ August 10 → What did the data look like?
 August 11 → What changed?
 ```
 
----
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 ## So remember these 3
 
@@ -701,6 +465,7 @@ August 11 → What changed?
    Processed    Events     Daily copy
       data       /logs      of state
 ```
+-----------------------------------------------------------------------------------------------------------------------------------
 
 ### In your Problem → Solution format:
 
@@ -710,8 +475,10 @@ August 11 → What changed?
 
 That's what this whole section is trying to explain.
 
+-----------------------------------------------------------------------------------------------------------------------------------
 
 ## what is data swarm ?
+
 What is DataSwarm?
 
 DataSwarm is a data workflow/pipeline system developed at Facebook (Meta).
@@ -730,15 +497,19 @@ Warehouse Table
 
 DataSwarm = a system for defining and automatically running data workflows/pipelines that produce data in the warehouse.
 
+----------------------------------------------------------------------------------------------------------------------------------
+
 # Writing Data Pipelines
 
-The blog means:
+**The blog means:**
 
 SQL = Business logic
 → SQL defines what data to calculate/transform.
 
 Python = Orchestration
 → Python controls when and in what order the SQL runs.
+
+--------------------------------------------------------------------------------------------------------------
 
 ## Real-life example: Facebook daily post analytics
 
@@ -749,7 +520,7 @@ How many likes each post received every day.
 Facebook already has a huge table:
 
 posts
---------------------------------
+
 post_id
 user_id
 created_at
@@ -757,7 +528,7 @@ created_at
 and:
 
 likes
---------------------------------
+
 user_id
 post_id
 liked_at
@@ -765,10 +536,12 @@ liked_at
 They want to create:
 
 daily_post_likes
---------------------------------
+
 date
 post_id
 like_count
+
+--------------------------------------------------------------------------------------------------------------------------
 
 2. SQL does the business logic
 
@@ -799,6 +572,8 @@ Store the result
 
 That's business logic.
 
+-------------------------------------------------------------------------------------------------------------------------------
+
 3. But SQL doesn't manage the whole pipeline
 
 Imagine this needs to happen every day at 2 AM.
@@ -817,11 +592,13 @@ Move to next task
  ↓
 Notify team if something failed
 
-That's where Python/orchestration comes in.
+**That's where Python/orchestration comes in.**
+
+----------------------------------------------------------------------------------------------------------------------------------
 
 4. Python manages the workflow
 
-A simplified Python example:
+**A simplified Python example:**
 
 def daily_post_pipeline():
 
@@ -838,6 +615,8 @@ Python isn't calculating the number of likes.
 It's saying:
 
 "Run this step, then this step, then this step."
+
+-------------------------------------------------------------------------------------------------------------------------------
 
 5. Real pipeline
 
@@ -860,13 +639,15 @@ A real production pipeline might look like:
                   ▼
           Send notification
 
-And the SQL might be:
+**And the SQL might be:**
 
 daily_post_likes.sql
 
-while Python controls it:
+**while Python controls it:**
 
 pipeline.py
+
+-------------------------------------------------------------------------------------------------------------------------------
 6. Why separate SQL and Python?
 
 Because they solve different problems.
@@ -902,6 +683,8 @@ run_sql()
 validate_data()
 send_alert()
 
+----------------------------------------------------------------------------------------------------------------
+
 ## key idea
 
                  DATA PIPELINE
@@ -919,6 +702,7 @@ send_alert()
    GROUP BY                 Retries
    Calculate                Monitoring
 
+-----------------------------------------------------------------------------------------------------------------------
 
 # how DataSwarm organizes and runs pipelines
 
@@ -1316,4 +1100,794 @@ If there is an error in any of the SQL statements, the custom linter will displa
 
 <!-- The linter checks the SQL before the pipeline runs: -->
 
-# 
+# upm :- advanced pipeline features 
+Normally: Engineers manually tell the pipeline what data it must wait for.
+
+Example:
+
+Operator 1 → wait for source partition
+Operator 2 → wait for Operator 1
+
+But the SQL already tells us this:
+
+WHERE ds = '<DATEID>'
+
+From this, a system can understand:
+
+“This query needs the <DATEID> partition of this table.”
+
+So Meta built UPM (Unified Programming Model) to automatically analyze the SQL and infer these dependencies.
+
+Without UPM
+
+my_operator1 = PrestoOperator(
+    dep_list=[wait_for_my_data_source],
+    sql="""... FROM my_data_source
+            WHERE ds='<DATEID>' ..."""
+)
+
+my_operator2 = PrestoOperator(
+    dep_list=[my_operator1],
+    sql="""... FROM my_staging_table
+            WHERE ds='<DATEID>' ..."""
+)
+
+You manually tell the system:
+
+operator1 → wait for my_data_source
+operator2 → wait for operator1
+
+So you explicitly write dep_list.
+
+With UPM
+config.set(schedule="@daily", use_upm=True)
+
+my_operator1 = PrestoOperator(
+    sql="""... FROM my_data_source
+            WHERE ds='<DATEID>' ..."""
+)
+
+my_operator2 = PrestoOperator(
+    sql="""... FROM my_staging_table
+            WHERE ds='<DATEID>' ..."""
+)
+Now you remove dep_list.
+
+UPM = “Look at my SQL and automatically figure out what data this pipeline needs before running.”
+
+
+# Presto and Spark: Querying the warehouse
+### Presto and Spark: Querying the warehouse
+
+This section is basically about **how Meta processes data stored in its data warehouse**.
+
+* **Presto** → mainly used to run SQL queries interactively and quickly.
+* **Spark** → mainly used for large-scale data processing and more complex transformations.
+* Both can **read data from the warehouse** and process it.
+* The choice depends on the type and scale of the workload.
+
+For your Data Engineering preparation, understand the basic difference:
+
+> **Presto = SQL query engine**
+> **Spark = distributed data processing engine**
+
+This paragraph gives you the **real-world reason for choosing Presto vs Spark**.
+
+### What you should remember
+
+| Presto                            | Spark                                 |
+| --------------------------------- | ------------------------------------- |
+| Mainly SQL queries                | Heavy data processing                 |
+| Usually faster for normal queries | Better for complex/heavy workloads    |
+| Good for ad-hoc analysis          | Good for expensive joins              |
+| Lower memory requirement          | Can handle higher memory requirements |
+
+### Important point
+
+At Meta, engineers **mostly write SQL**:
+
+* Presto SQL
+* Spark SQL
+
+They can also use **Python, Java, Scala APIs** with Spark when transformations become more complex.
+
+### Real-world example
+
+Suppose you need:
+
+**Simple query:**
+
+```sql
+SELECT country, COUNT(*)
+FROM users
+GROUP BY country;
+```
+
+→ **Presto** is usually a good choice.
+
+**Very heavy processing:**
+
+```text
+Huge datasets
++ multiple expensive JOINs
++ complex transformations
++ high memory requirement
+```
+
+→ **Spark** is more suitable.
+
+### One important Meta-scale point
+
+They say scanning **a few billion rows** can still be considered a **light query at Meta scale**.
+
+You don't need to memorize that number. The important lesson is:
+
+> **Tool choice depends on workload, not simply on the amount of data.**
+
+For your preparation, this level is enough.
+
+
+## With Spark, Python, Java, and Scala are programming languages used to control Spark.
+
+Think of it like this:
+
+Python / Java / Scala
+        ↓
+    Spark API
+        ↓
+   Spark Engine
+        ↓
+Distributed processing
+
+Why use Python/Java/Scala?
+
+<!-- SQL is excellent for normal transformations.
+
+Programming APIs become useful when you need: -->
+
+Complex transformation logic
+Loops/conditions
+Custom functions
+More control over processing
+Integration with other applications
+
+# conclusion 
+![alt text](image-4.png)
+
+Overall flow
+
+Data Sources
+    ↓
+Batch / Streaming
+    ↓
+Raw Data
+    ↓
+Stage / Cleaning
+    ↓
+Core Data
+    ↓
+Analytical Tables
+    ↓
+BI / ML / Analytics
+
+# depth explantion 
+Table of Contents
+
+We will understand the diagram in 8 steps:
+
+Data Sources — where data comes from
+Batch & Streaming — how data enters the platform
+Raw Data — why raw data is stored
+Stage/Cleaning — cleaning and standardization
+Core Data — creating reliable business data
+Analytical Tables — preparing data for users
+Consumers — dashboards, ML, analytics
+Cross-cutting layers — governance, quality, lineage, security
+
+
+## data sources 
+Example
+
+Imagine an e-commerce company.
+
+Data might come from:
+
+Website
+   ↓
+User clicks → Logs
+
+Payment system
+   ↓
+Transactions → OLTP database
+
+Marketing platform
+   ↓
+Campaign data → Third-party app
+
+Company application
+   ↓
+Employee/customer data → Internal app
+
+<!-- The Data Engineer's job starts when this data needs to be brought into the data platform. -->
+
+The source system is designed primarily to run the application.
+
+The data platform is designed primarily to store, process, and analyze data.
+
+## batch and streaming 
+
+| Batch            | Streaming        |
+| ---------------- | ---------------- |
+| Periodic         | Continuous       |
+| Higher latency   | Low latency      |
+| Easier to manage | More complex     |
+| Daily reports    | Real-time alerts |
+
+<!-- Real-world reality -->
+
+Streaming sounds better because it's "real-time", but you don't use streaming everywhere.
+
+It is more expensive and operationally more complicated.
+
+If a business only needs a report once per day, batch processing is usually enough.
+
+--------------------------------------------------
+
+## Raw data 
+
+After data enters the platform through batch or streaming, it is stored as Raw Data.
+
+Data Sources
+     ↓
+Batch / Streaming
+     ↓
+Raw Data (S3/GCS)
+
+**The raw layer keeps this information largely as received.**
+
+-------------------------------------------------------------
+
+**Why keep raw data?**
+
+1. Backup / recovery
+
+If your cleaning logic has a bug, you can go back to the original data.
+
+2. Reprocessing
+
+Suppose tomorrow you change your transformation logic.
+
+You can take the raw data and process it again.
+
+3. Auditability
+
+You can answer:
+
+"Where did this data originally come from?"
+
+-----------------------------------------------------------
+
+**S3 / GCS**
+
+The diagram mentions:
+
+S3 → Amazon's object storage
+GCS → Google Cloud Storage
+
+These are commonly used to store large amounts of data cheaply.
+
+## Stage / Cleaning
+
+1. Rename variables
+
+Different sources may use different names:
+
+cust_id
+customerID
+customer_id
+
+We standardize them to something like:
+
+customer_id
+
+2. Standardize data types
+
+3. Data Quality
+
+4. Remove duplicates
+5. Remove test data
+6. Unify user IDs
+**Different systems might identify the same person differently:**
+
+System A → user_123
+System B → customer_987
+
+The data platform may map them to a common identifier.
+
+---------------------------------------------------------------
+**Reality check**
+
+Cleaning is often one of the biggest parts of real Data Engineering work.
+
+It is not just:
+
+"Load data → transform data → done."
+
+Real source data is messy, inconsistent, and constantly changing.
+
+Core idea:
+
+The staging layer prepares raw data so downstream systems can safely use it.
+
+## core data 
+Core Data is where cleaned data becomes trusted business data.
+
+**What happens here?**
+
+We organize the data into useful business concepts.
+
+**Example**
+**
+Suppose two systems provide customer information:**
+
+CRM:
+customer_id = 101
+name = Lakhan
+
+Website:
+user_id = 101
+country = India
+
+Core Data can combine these into:
+
+customer_id | name   | country
+101         | Lakhan | India
+
+Now different teams can use a consistent definition of a customer.
+
+**Facts and Dimensions**
+
+You may see these terms frequently in Data Engineering:
+
+**Reality check**
+
+This layer is where **business logic becomes important.**
+
+The difficult part isn't just SQL. Engineers need to understand:
+
+What does this data actually mean?
+Which definition is correct?
+How should different sources be combined?
+What should happen when data conflicts?
+
+Core idea:
+
+Core Data = cleaned data organized around reliable business concepts and definitions.
+
+## analytical tables 
+Now we have trusted Core Data.
+
+The next step is to **make data easy and efficient for specific users and use cases.**
+
+Core Data
+    ↓
+Analytical Tables
+
+---------------------------------------------
+**What happens here?**
+
+We create tables specifically designed for analysis.
+
+**For example, Core Data might contain detailed orders:**
+
+order_id
+customer_id
+product_id
+price
+quantity
+date
+
+**An analytical table might prepare:**
+
+date
+country
+total_orders
+total_revenue
+
+Now a dashboard can query it much faster.
+
+### three common things 
+1. Aggregation
+
+Turn detailed data into summaries.
+
+10 million orders
+       ↓
+daily revenue by country
+
+2. Pre-joining
+
+Frequently used tables can be joined beforehand.
+
+orders + customers + products
+            ↓
+   analytical table
+
+3. Use-case specific tables
+
+Different teams may need different tables.
+
+Marketing → campaign performance
+Finance   → revenue
+Product   → user engagement
+
+
+### Why?
+
+Instead of making every analyst perform expensive transformations every time:
+
+Raw/Core data
+     ↓
+complex JOIN + GROUP BY
+     ↓
+dashboard
+
+we prepare the data once:
+
+Core Data
+    ↓
+Analytical Table
+    ↓
+Dashboard
+
+### Reality check
+
+This creates a trade-off:
+
+Faster queries + easier analysis
+
+but
+
+More tables + more storage + more pipelines to maintain.
+
+### Core idea:- Analytical tables are prepared versions of core data optimized for specific analytical needs.
+
+## Consumers
+
+Now the prepared Analytical Tables are used by the people and systems that need the data.
+
+Analytical Tables
+        ↓
+   Consumers
+
+### which types of consumer are ?
+1. BI / Dashboards
+2. KPIs / Reporting
+3. Notebooks
+4. Machine Learning
+
+
+### core idea :- Data Engineering ultimately exists to make reliable data available to people and systems that create business value.
+
+## Cross-Cutting Layers
+
+These are the things that apply across the entire pipeline, not just one stage.
+
+             Governance
+             Testing
+             Quality
+             Lineage
+             Observability
+             Privacy
+             Security
+                  ↓
+Source → Raw → Clean → Core → Analytical → Consumers
+
+## they are  
+
+1. Data Quality
+
+Checks whether data is correct.
+
+2. Data Lineage
+
+Tracks where data came from and where it goes.
+
+3. Observability
+
+Monitors whether pipelines are working.
+
+For example:
+
+Pipeline failed
+↓
+Alert Engineer
+
+4. Governance
+Defines rules around how data should be managed and used.
+
+5. Privacy & Security
+Controls who can access sensitive data
+
+### Reality check
+
+These aren't optional "extra features" in a serious data platform.
+
+At small scale, teams may handle them simply.
+
+At large companies like Meta, they become critical infrastructure because millions/billions of records and many teams depend on the data.
+
+### Core idea:- A production data pipeline needs not only processing, but also quality, monitoring, lineage, governance, and security.
+
+# additional 
+# additonal 01 
+![Distributed Database Architecture Diagram](image.png)
+
+## problems 
+### Problem 1: Primary region failure 💥
+
+**Problem:** If the primary region goes down, the data/service could become unavailable.
+
+**Solution:** Keep a replicated copy of the shard in a **secondary region**. If the primary fails, the secondary can take over.
+
+---
+
+### Problem 2: Users are far away from the primary region 🌍
+
+**Problem:** Users in Europe or Asia would have to communicate with a database in the US, causing higher latency.
+
+**Solution:** Keep replicas in different geographic regions so users can access data **closer to them**.
+
+---
+
+### Problem 3: Too many read requests 🚦
+
+**Problem:** Millions of users may request the same data. Sending every request directly to MySQL would overload it.
+
+**Solution:** Use **caches and followers** to distribute read traffic and reduce the load on MySQL.
+
+---
+
+### Problem 4: Database reads are slow 🐌
+
+**Problem:** Going to MySQL for every request takes more time.
+
+**Solution:** Store frequently requested data in **cache**, allowing fast reads.
+
+---
+
+### Problem 5: Cache contains old data ❌
+
+**Problem:** When data changes in MySQL, the old value may still exist in the cache.
+
+**Solution:** **Invalidate/update the cache** when a write happens so users don't receive stale data.
+
+---
+
+### Problem 6: One region cannot handle everything 📈
+
+**Problem:** Facebook operates globally with enormous traffic. One region shouldn't have to handle all requests.
+
+**Solution:** Distribute data and traffic across **multiple regions, replicas, caches, and followers**.
+
+---
+
+### 🎯 The main idea
+
+**Problem:** Facebook needs to serve enormous global traffic while keeping data available and fast.
+
+**Solution:**
+**Replication + multiple regions + caching + followers**
+
+That's the core architecture.
+
+# additonal 02 
+![alt text](image-1.png)
+
+## problem 01 
+This image is showing a very common **data architecture problem**:
+
+> **In theory, you want one central data platform. In reality, data gets scattered across different systems.**
+
+### 1. In an ideal world
+
+Imagine the company has one central **Apache Iceberg** data platform.
+
+Inside it:
+
+```text
+                 ICEBERG
+        ┌─────────────────────┐
+        │ Sales │ HR │ Marketing│
+        │ Ops   │ Core │ Data   │
+        └─────────────────────┘
+```
+
+All departments put their data into the **same platform**.
+
+Then different tools can access that same data:
+
+* Google BigQuery
+* Trino
+* Snowflake
+* Databricks
+
+So you have:
+
+> **One data storage layer → many tools can use it.**
+
+That's the dream.
+
+---
+
+### 2. In reality 😅
+
+The data doesn't stay in one place.
+
+Instead:
+
+```text
+Iceberg
+ ├── Sales
+ └── Marketing
+
+Snowflake
+ └── HR
+
+BigQuery
+ └── Operations
+
+PostgreSQL
+ └── European Sales
+```
+
+Now the company has **data silos**.
+
+For example, suppose you want:
+
+> **Total sales + HR employee information + European operations**
+
+You may need to query:
+
+```text
+Iceberg
+   +
+Snowflake
+   +
+BigQuery
+   +
+PostgreSQL
+```
+
+That's much more complicated.
+
+---
+
+### Why does this happen?
+
+Different teams have different needs.
+
+For example:
+
+**HR team** might already use Snowflake.
+
+**Operations team** might have data in BigQuery.
+
+**European team** might have an old PostgreSQL database.
+
+**Data team** might use Iceberg/Databricks.
+
+Nobody wants to immediately migrate everything.
+
+So over time:
+
+```text
+New team → new tool
+Old system → stays
+Acquisition → brings another system
+Business requirement → another database
+```
+
+And eventually you get **data fragmentation**.
+
+---
+
+### 🎯 The actual system-design problem
+
+**Problem:**
+
+> Data is spread across multiple storage systems and platforms, making it difficult to access, combine, govern, and analyze data consistently.
+
+**Ideal solution:**
+
+> Have a common data layer, such as Iceberg, where data is organized centrally while different compute/query engines can access it.
+
+### The important concept for you
+
+This image is really teaching:
+
+**Centralized data layer vs. data silos**
+
+## system desgin question 
+
+And this becomes an important **system-design trade-off**:
+
+> **How do we allow different teams and tools to work independently without creating a mess of disconnected data?**
+
+Bro, the answer is basically **“separate storage from compute.”** This is one of the most important ideas in modern data architecture.
+
+### Problem
+
+Different teams want to use different tools:
+
+* Analytics → Snowflake
+* Data engineering → Databricks
+* SQL users → Trino
+* Other workloads → BigQuery
+
+If every tool has its **own copy of the data**, you get:
+
+> duplicate data + inconsistent data + expensive movement + difficult governance.
+
+### Solution
+
+Create **one common data/storage layer** and let different tools access it.
+
+For example:
+
+```text
+                DATA STORAGE
+             Apache Iceberg
+                    │
+        ┌───────────┼───────────┐
+        ↓           ↓           ↓
+     Trino      Databricks   Snowflake
+        ↓           ↓           ↓
+      Team A      Team B      Team C
+```
+
+The key is:
+
+> **Teams can choose their own compute/query tool, but they don't need to create their own separate copy of the data.**
+
+### But how?
+
+Apache Iceberg acts as the **common table/storage layer**.
+
+It manages things like:
+
+* Where the data files are
+* Table schema
+* Partitions
+* Metadata
+* Table versions
+* Transactions
+
+Then different engines can understand and work with those tables.
+
+So:
+
+```text
+             One Data Layer
+                  ↓
+      ┌───────────┼───────────┐
+      ↓           ↓           ↓
+    Trino     Databricks   Snowflake
+```
+
+### The important architecture principle
+
+**Don't force every team to use the same compute engine.**
+
+Instead:
+
+> **Standardize the data layer, but allow flexibility in the compute layer.**
+
+That's how you get both:
+
+**Team independence + centralized data management.**
+
+This is exactly why technologies like **Apache Iceberg** are important in modern data platforms.
+
+
+# additional 03 
