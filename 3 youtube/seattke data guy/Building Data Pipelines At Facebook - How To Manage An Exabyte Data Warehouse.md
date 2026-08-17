@@ -276,7 +276,7 @@ Data Retention = Automatically controlling how long data remains in the system.
 
 -----------------------------------------------------------------------------------------------------
 
-# Data Ownership and On-Call
+
 
 ### Problem
 
@@ -507,17 +507,19 @@ DataSwarm = a system for defining and automatically running data workflows/pipel
 ----------------------------------------------------------------------------------------------------------------------------------
 
 # Data discovery, data catalog
+
 Meta has millions of tables in its huge data warehouse.
 But there may be thousands of tables with similar names.
 
 So finding the right table becomes difficult.
 
 -------------------------------------------------------------------------------
-Meta built iData, basically a Google Search for their data warehouse.
+
+**Meta built iData**, basically a Google Search for their data warehouse.
 
 iData searches the warehouse and gives you the most relevant tables.
 
-But it doesn't just search the table name.
+But **it doesn't just search the table name.**
 
 It also considers things like:
 

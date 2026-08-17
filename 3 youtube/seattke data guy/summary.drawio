@@ -1,11 +1,242 @@
 <mxfile host="Electron">
   <diagram name="Page-1" id="EjcmdVobYiEuLLMNNMqg">
-    <mxGraphModel dx="1030" dy="626" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1261" dy="783" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="qhTn4pBHN9Yby8joDTBl-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
-          <mxGeometry height="40" width="430" x="270" y="90" as="geometry" />
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Data engineering at Meta: High-Level Overview of the internal tech stack" vertex="1">
+          <mxGeometry height="40" width="430" x="220" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Data Locality &amp;amp; Distributed Data Management" vertex="1">
+          <mxGeometry height="40" width="250" x="310" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-3" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-1" style="endArrow=classic;html=1;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-2" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="510" y="260" as="sourcePoint" />
+            <mxPoint x="560" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;problem :- &lt;/b&gt;data is spread across different location&amp;nbsp;" vertex="1">
+          <mxGeometry height="50" width="240" x="660" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-5" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-2" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-4" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="640" y="170" />
+              <mxPoint x="640" y="105" />
+            </Array>
+            <mxPoint x="570" y="230" as="sourcePoint" />
+            <mxPoint x="620" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;solution :- namespace&amp;nbsp;&lt;/b&gt;&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;div&gt;it is means that related table place together&amp;nbsp; so less data movement&amp;nbsp; it is cheap and fast&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="280" x="650" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-7" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-4" style="endArrow=classic;html=1;rounded=0;exitX=0.475;exitY=0.976;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.437;entryY=-0.017;entryDx=0;entryDy=0;entryPerimeter=0;" target="qhTn4pBHN9Yby8joDTBl-6" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="570" y="320" as="sourcePoint" />
+            <mxPoint x="620" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;example:-&amp;nbsp;&lt;/b&gt;&lt;div&gt;&lt;div&gt;Namespace: User Data&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;├── users&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;├── user_profiles&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;└── user_activity&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Namespace: Ads Data&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;├── ads&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;├── ad_clicks&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp;└── ad_impressions&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="160" width="210" x="1000" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-9" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-6" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-8" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="245" />
+              <mxPoint x="970" y="150" />
+            </Array>
+            <mxPoint x="740" y="280" as="sourcePoint" />
+            <mxPoint x="790" y="230" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Large-Scale Data Scanning &amp;amp; Partitioning" vertex="1">
+          <mxGeometry height="40" width="250" x="310" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-11" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-2" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-10" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="560" y="320" as="sourcePoint" />
+            <mxPoint x="610" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;problem :-&amp;nbsp; &lt;/b&gt;a warehouse have billiow of row&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;div&gt;if a query ask of recent data , system has to scan whole warehouse&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="310" x="650" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-13" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-10" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-12" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="650" y="480" as="sourcePoint" />
+            <mxPoint x="700" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;solution :-&amp;nbsp;&lt;/b&gt; partition of table&amp;nbsp;&lt;div&gt;this is also called partition pruning&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="50" width="310" x="650" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-15" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-12" style="endArrow=classic;html=1;rounded=0;exitX=0.421;exitY=0.973;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.418;entryY=0.04;entryDx=0;entryDy=0;entryPerimeter=0;" target="qhTn4pBHN9Yby8joDTBl-14" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="520" />
+            </Array>
+            <mxPoint x="650" y="480" as="sourcePoint" />
+            <mxPoint x="700" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-16" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-14" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-17" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="565" />
+              <mxPoint x="1000" y="425" />
+            </Array>
+            <mxPoint x="730" y="450" as="sourcePoint" />
+            <mxPoint x="1030" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-17" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" value="&lt;b&gt;example :-&amp;nbsp;&lt;/b&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;div&gt;posts table&lt;/div&gt;&lt;div&gt;│&lt;/div&gt;&lt;div&gt;├── Partition: ds=2026-08-09&lt;/div&gt;&lt;div&gt;│&amp;nbsp; &amp;nbsp; &amp;nbsp; ├── file1.parquet&lt;/div&gt;&lt;div&gt;│&amp;nbsp; &amp;nbsp; &amp;nbsp; ├── file2.parquet&lt;/div&gt;&lt;div&gt;│&amp;nbsp; &amp;nbsp; &amp;nbsp; └── file3.parquet&lt;/div&gt;&lt;div&gt;│&lt;/div&gt;&lt;div&gt;└── Partition: ds=2026-08-10&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;├── file4.parquet&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;├── file5.parquet&lt;/div&gt;&lt;div&gt;&amp;nbsp; &amp;nbsp; &amp;nbsp; &amp;nbsp;└── file6.parquet&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="210" width="190" x="1040" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-18" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" value="&lt;b&gt;important point&amp;nbsp;&lt;/b&gt;&lt;div&gt;1. table can be have addtional partition of column to increases the&amp;nbsp; efficency&amp;nbsp;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;2. partiition may contain one more files&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="290" x="960" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-19" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-14" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.276;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="qhTn4pBHN9Yby8joDTBl-18" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points">
+              <mxPoint x="1040" y="565" />
+            </Array>
+            <mxPoint x="920" y="530" as="sourcePoint" />
+            <mxPoint x="970" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-20" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Data Retention" vertex="1">
+          <mxGeometry height="60" width="250" x="310" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-22" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-10" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="qhTn4pBHN9Yby8joDTBl-20" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="800" y="500" as="sourcePoint" />
+            <mxPoint x="850" y="450" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-23" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;problem ;-&lt;/b&gt; data is grows over the time&amp;nbsp;" vertex="1">
+          <mxGeometry height="50" width="240" x="650" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-24" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;solution :- &lt;/b&gt;use a data rentention policy how long data stay here&amp;nbsp;" vertex="1">
+          <mxGeometry height="50" width="240" x="650" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-25" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-20" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="qhTn4pBHN9Yby8joDTBl-23" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="800" y="780" as="sourcePoint" />
+            <mxPoint x="850" y="730" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-27" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-23" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-24" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="800" y="780" as="sourcePoint" />
+            <mxPoint x="850" y="730" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-28" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Types of ways data goes into warehouse&amp;nbsp;" vertex="1">
+          <mxGeometry height="80" width="250" x="310" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-29" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-20" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-28" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="670" y="1010" as="sourcePoint" />
+            <mxPoint x="720" y="960" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-31" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;1. &lt;b&gt;data workflow&amp;nbsp; / pipeline :-&lt;/b&gt;&amp;nbsp; code&amp;nbsp; that move,&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;transform&amp;nbsp; that&amp;nbsp; data into warehouse&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;2.&amp;nbsp; logs :-&amp;nbsp; &lt;/b&gt;everything that user intract&amp;nbsp; it create a event that store in logs&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;threre is two types :- server side , client side&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;3.&lt;b&gt; daily snapshort :-&amp;nbsp;&lt;/b&gt; c&lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;opy the current state into the warehouse&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="180" width="270" x="650" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-32" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-28" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.037;entryY=0.333;entryDx=0;entryDy=0;entryPerimeter=0;" target="qhTn4pBHN9Yby8joDTBl-31" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="670" y="890" as="sourcePoint" />
+            <mxPoint x="720" y="840" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-33" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-31" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-34" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="670" y="890" as="sourcePoint" />
+            <mxPoint x="1020" y="1050" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-34" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="code part is done by &lt;b&gt;data swarm&lt;/b&gt; library (internal build )" vertex="1">
+          <mxGeometry height="60" width="210" x="1030" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-36" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Data discovery, data catalog" vertex="1">
+          <mxGeometry height="60" width="250" x="310" y="1260" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-37" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;problem :-&amp;nbsp;&lt;/b&gt; million of the data table . find a&amp;nbsp; table look like finding a needel in a ocean&amp;nbsp;" vertex="1">
+          <mxGeometry height="60" width="270" x="650" y="1260" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-38" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-36" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="qhTn4pBHN9Yby8joDTBl-37" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1260" as="sourcePoint" />
+            <mxPoint x="750" y="1210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-39" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-28" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="qhTn4pBHN9Yby8joDTBl-36" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1260" as="sourcePoint" />
+            <mxPoint x="750" y="1210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-40" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;" value="&lt;b&gt;solution :-&lt;/b&gt; idata , goggle seach of data warehouse&amp;nbsp;" vertex="1">
+          <mxGeometry height="60" width="270" x="650" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-41" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-37" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-40" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1250" as="sourcePoint" />
+            <mxPoint x="750" y="1200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-42" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" value="&lt;b&gt;it is just not provide the data table&lt;/b&gt;&amp;nbsp; . it is also consider thing are :-&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;div&gt;1.freshness&amp;nbsp;&lt;/div&gt;&lt;div&gt;2.documnetation&amp;nbsp;&lt;/div&gt;&lt;div&gt;3.usage&amp;nbsp;&lt;/div&gt;&lt;div&gt;4.internal mention&amp;nbsp;&lt;/div&gt;&lt;div&gt;5.ownership&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="140" width="250" x="980" y="1270" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-43" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-40" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-42" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1250" as="sourcePoint" />
+            <mxPoint x="750" y="1200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-44" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="presto and spark : querying the datwarehouse&amp;nbsp;" vertex="1">
+          <mxGeometry height="70" width="250" x="310" y="1525" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-45" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-36" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-44" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1250" as="sourcePoint" />
+            <mxPoint x="590" y="1400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-46" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;" value="at meta , engineer write sql&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;div&gt;presto :- light weight query&amp;nbsp;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;spark :- heavy query , complex join, huge data set&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="240" x="660" y="1520" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-47" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-44" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-46" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="600" y="1590" as="sourcePoint" />
+            <mxPoint x="750" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-48" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="scuba real analytics&amp;nbsp;" vertex="1">
+          <mxGeometry height="70" width="250" x="310" y="1680" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-49" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-44" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="qhTn4pBHN9Yby8joDTBl-48" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="500" y="1610" as="sourcePoint" />
+            <mxPoint x="750" y="1580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-50" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=5;spacingLeft=5;" value="&lt;b&gt;problem :- &lt;/b&gt;facebook genrate the huge amoutn of&amp;nbsp; logs .&lt;div&gt;1.nomral data warehouse take so long to process&amp;nbsp;&lt;/div&gt;&lt;div&gt;2. engineer want to knwo what happen right now&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="100" width="270" x="655" y="1660" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-51" edge="1" parent="1" source="qhTn4pBHN9Yby8joDTBl-48" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="qhTn4pBHN9Yby8joDTBl-50" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="700" y="1600" as="sourcePoint" />
+            <mxPoint x="750" y="1550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-52" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingTop=5;" value="&lt;b&gt;solution :- &lt;/b&gt;scrub intrnal tech which take recent log&amp;nbsp; create graph&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;div&gt;scuba is not store historical data&amp;nbsp; . storing part cover by hive . it is store historical logs&amp;nbsp;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="101" width="275" x="655" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="qhTn4pBHN9Yby8joDTBl-53" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="80" width="250" x="310" y="1930" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
