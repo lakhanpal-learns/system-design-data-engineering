@@ -1,6 +1,6 @@
 # Building Data Pipelines At Facebook - How To Manage An Exabyte Data Warehouse (Data engineering at Meta: High-Level Overview of the internal tech stack)
 
-# problem 1 Data Locality & Distributed Data Management
+#  Data Locality & Distributed Data Management
 
 Sure. The problem is basically **data is spread across different physical locations**.
 
@@ -72,6 +72,10 @@ activity
    ↓
 Query locally
 
+## if they want to use another namespace tables. how they guys are handle this ?
+
+**replica data :-** Data engineers can create these cross-namespace replicas in a few minutes through a web-based tool, and they will automatically be kept in sync.
+
 ### The key problem
 
 > **How do we organize a huge distributed warehouse so that queries don't have to constantly move massive amounts of data between different locations?**
@@ -122,7 +126,7 @@ For your system-design notes, I'd write:
 Problem: Cross-namespace data access
 Solution: Cross-namespace table replication with automatic synchronization.
 
-# problem 2 Large-Scale Data Scanning & Partitioning
+# Large-Scale Data Scanning & Partitioning
 A data warehouse table can contain **billions or trillions of rows**.
 
 If a query asks for only recent data, the system would have to scan a huge amount of unnecessary data.
@@ -168,6 +172,9 @@ WHERE ds = '2026-08-10'
 the system can **skip the other partitions** and read only the required one.
 
 This is called **partition pruning**.
+
+
+**importan point :-**  Tables can also have additional partition columns to improve efficiency, and each individual partition is stored in a separate file for fast indexing
 
 -------------------------------------------------------------------------------------------------------------------
 
@@ -499,6 +506,422 @@ DataSwarm = a system for defining and automatically running data workflows/pipel
 
 ----------------------------------------------------------------------------------------------------------------------------------
 
+# Data discovery, data catalog
+Meta has millions of tables in its huge data warehouse.
+But there may be thousands of tables with similar names.
+
+So finding the right table becomes difficult.
+
+-------------------------------------------------------------------------------
+Meta built iData, basically a Google Search for their data warehouse.
+
+iData searches the warehouse and gives you the most relevant tables.
+
+But it doesn't just search the table name.
+
+It also considers things like:
+
+Freshness → Is the data recently updated?
+Documentation → Is the table well documented?
+Usage → Do many pipelines/dashboards already use it?
+Internal mentions → Do engineers frequently reference it?
+Ownership → Which team/on-call group owns it?
+
+-----------------------------------------------------------------------
+Another important feature: Lineage
+You can ask:
+
+"Where did this dashboard's data come from?"
+
+and trace it backward.
+
+**Problem:** Huge data warehouse → engineers can't easily find the right data or understand where it came from.
+
+**Solution**: Build a **data catalog + search engine + lineage system** that helps users discover trustworthy datasets and understand their dependencies.
+
+
+# Presto and Spark: Querying the warehouse
+### Presto and Spark: Querying the warehouse
+
+This section is basically about **how Meta processes data stored in its data warehouse**.
+
+* **Presto** → mainly used to run SQL queries interactively and quickly.
+* **Spark** → mainly used for large-scale data processing and more complex transformations.
+* Both can **read data from the warehouse** and process it.
+* The choice depends on the type and scale of the workload.
+
+For your Data Engineering preparation, understand the basic difference:
+
+> **Presto = SQL query engine**
+> **Spark = distributed data processing engine**
+
+This paragraph gives you the **real-world reason for choosing Presto vs Spark**.
+
+### What you should remember
+
+| Presto                            | Spark                                 |
+| --------------------------------- | ------------------------------------- |
+| Mainly SQL queries                | Heavy data processing                 |
+| Usually faster for normal queries | Better for complex/heavy workloads    |
+| Good for ad-hoc analysis          | Good for expensive joins              |
+| Lower memory requirement          | Can handle higher memory requirements |
+
+### Important point
+
+At Meta, engineers **mostly write SQL**:
+
+* Presto SQL
+* Spark SQL
+
+They can also use **Python, Java, Scala APIs** with Spark when transformations become more complex.
+
+### Real-world example
+
+Suppose you need:
+
+**Simple query:**
+
+```sql
+SELECT country, COUNT(*)
+FROM users
+GROUP BY country;
+```
+
+→ **Presto** is usually a good choice.
+
+**Very heavy processing:**
+
+```text
+Huge datasets
++ multiple expensive JOINs
++ complex transformations
++ high memory requirement
+```
+
+→ **Spark** is more suitable.
+
+### One important Meta-scale point
+
+They say scanning **a few billion rows** can still be considered a **light query at Meta scale**.
+
+You don't need to memorize that number. The important lesson is:
+
+> **Tool choice depends on workload, not simply on the amount of data.**
+
+For your preparation, this level is enough.
+
+
+## With Spark, Python, Java, and Scala are programming languages used to control Spark.
+
+Think of it like this:
+
+Python / Java / Scala
+        ↓
+    Spark API
+        ↓
+   Spark Engine
+        ↓
+Distributed processing
+
+Why use Python/Java/Scala?
+
+<!-- SQL is excellent for normal transformations.
+
+Programming APIs become useful when you need: -->
+
+Complex transformation logic
+Loops/conditions
+Custom functions
+More control over processing
+Integration with other applications
+
+# Scuba: Real-time analytics
+**Problem**
+
+Facebook generates huge amounts of logs continuously.
+
+**For example:**
+
+User opens Facebook
+      ↓
+log generated
+
+User clicks an ad
+      ↓
+log generated
+
+Server gets an error
+      ↓
+log generated
+
+
+**Engineers often need to know what is happening right now.**
+
+If they use the **normal large data warehouse, processing all that data can take too long.**
+
+-------------------------------------------------------------------------------------------------
+
+**Solution: Scuba ⚡**
+
+Scuba is a real-time analytics system designed for quickly analyzing recent data.
+
+Applications / Servers
+        ↓
+      Logs
+        ↓
+      Scuba
+        ↓
+ Real-time analysis
+        ↓
+Graphs / SQL / Debugging
+
+An engineer can open Scuba and immediately see:
+
+Errors
+  ↑
+  |             🔴
+  |           🔴
+  |        🔴
+  |____🔵🔵____________
+       time →
+
+------------------------------------------------------------------------------------------------
+**Why doesn't Scuba store everything?**
+
+Because storing and querying data in Scuba is expensive.
+
+So they might do:
+
+100% of logs
+      ↓
+     Hive
+
+But:
+
+100% logs
+      ↓
+   Sampling
+      ↓
+   1% / 5% / 10%
+      ↓
+    Scuba
+
+**So Hive gets the complete historical data, while Scuba gets a smaller sample for fast real-time analysis.**
+
+**Problem:** Engineers need to analyze fresh logs within minutes, but the massive data warehouse is not designed for this kind of instant analysis.
+
+**Solution:** Build a specialized real-time analytics system (Scuba) that ingests recent/sample data and makes it available for extremely fast queries and visualization.
+
+-----------------------------------------------------------------------------------------------
+
+# Daiquery & Bento: Query and analysis notebooks ( raptrox)
+This section introduces two notebook tools at Meta: Daiquery and Bento.
+
+**Daiquery**
+
+Think of Daiquery as a SQL/data exploration notebook.
+
+Daiquery
+   ↓
+Query data
+   ↓
+Presto / Spark / other sources
+   ↓
+Results
+
+------------------------------------------------------------------------
+**You can:**
+
+Write multiple SQL queries in cells.
+Query the warehouse using Presto or Spark.
+Quickly test and modify queries.
+View results as tables.
+Create visualizations.
+
+Main purpose: fast query development and data exploration.
+
+-------------------------------------------------------------------------
+**Bento**
+
+Bento is more like a full data science notebook.
+
+It is based on Jupyter and supports:
+
+SQL
++
+Python
++
+R
++
+Visualizations
++
+ML experiments
+
+| Daiquery                      | Bento                     |
+| ----------------------------- | ------------------------- |
+| Mainly query/data exploration | Full analysis environment |
+| SQL-focused                   | SQL + Python + R          |
+| Fast query iteration          | Complex analysis          |
+| Presto/Spark queries          | Queries + code + ML       |
+
+Simple way to remember:
+
+Daiquery = Query quickly
+Bento = Query + Analyze + Experiment
+
+# Unidash = Meta's dashboarding system
+This section is about Unidash = Meta's dashboarding system.
+
+**1. What is Unidash?**
+
+Think of it like:
+
+Unidash ≈ Tableau / Power BI / Superset
+
+It **turns query results into dashboards and charts**
+
+-------------------------------------------------------
+
+Daiquery
+   ↓
+SQL query
+   ↓
+Create graph
+   ↓
+Unidash
+   ↓
+Dashboard
+
+-------------------------------------------------------
+
+**2. The problem with dashboards**
+Imagine a dashboard shows:
+
+Daily Revenue
+Daily Active Users
+Orders by Country
+
+<!-- Every time someone opens the dashboard, running all the underlying queries again can be very expensive. -->
+
+---------------------------------------------------------
+
+So instead of:
+
+Dashboard opened
+      ↓
+Run huge query
+      ↓
+Aggregate billions of rows
+      ↓
+Show result
+
+-------------------------------------------------------
+
+Data Engineers can create a pipeline:
+
+Raw/Core Data
+      ↓
+Pre-aggregation
+      ↓
+Small summary table
+      ↓
+Dashboard
+
+<!-- Now the dashboard queries the small summary table. -->
+
+## RaptorX
+
+Sometimes pre-aggregation isn't practical because the dashboard query is complicated.
+
+**meta's internal Presto has RaptorX**, which caches commonly used data.
+
+Query
+  ↓
+RaptorX cache
+  ↓
+If data available → return quickly
+
+------------------------------------------------------------------------
+
+**Two ways to create Unidash dashboards**
+
+**Web interface**
+
+Easy
+Fast iteration
+Good for normal dashboards
+
+**Python API**
+
+More setup
+Better for complex dashboards
+Changes are easier to review/manage as code
+
+-----------------------------------------------------------------------
+
+Core idea
+
+Dashboard → don't repeatedly scan huge data → pre-aggregate or cache data → make dashboard fast and cheaper.
+
+--------------------------------------------------------------------------
+
+# software development 
+
+**What code do Data Engineers write?**
+
+They don't only write SQL.
+
+**They write code to:**
+
+Define data pipelines
+      ↓
+Connect internal systems
+      ↓
+Build team-specific tools
+      ↓
+Improve data infrastructure
+
+**For example**, they might write Python code that defines how a pipeline should run
+
+------------------------------------------------------------------------------
+**IDE — VS Code**
+
+Meta engineers use a customized version of Visual Studio Code.
+
+An IDE is simply the place where you:
+
+Write code
+Debug code
+Test code
+Manage projects
+
+------------------------------------------------------------------------------
+**Source Control**
+
+They use Mercurial internally for source control.
+
+The important concept for you is:
+
+Source control lets many engineers work on code safely, track changes, review changes, and revert mistakes.
+
+You will commonly encounter Git instead of Mercurial outside Me
+
+-------------------------------------------------------------------------------
+**Near-monorepo**
+
+This is an important concept.
+
+Meta keeps most pipelines and internal tools in one huge repository.
+
+        One large repository
+              │
+     ┌────────┼─────────┐
+     ↓        ↓         ↓
+Pipeline A  Pipeline B  Tools
+
+**This is called a monorepo** or, in their case, a near-monorepo because some related repositories are separate.
+
+
 # Writing Data Pipelines
 
 **The blog means:**
@@ -652,7 +1075,7 @@ pipeline.py
 
 Because they solve different problems.
 
-SQL is good at:
+**SQL is good at:**
 Filtering
 JOIN
 GROUP BY
@@ -667,7 +1090,8 @@ SELECT
     COUNT(*) AS likes
 FROM likes
 GROUP BY post_id;
-Python is good at:
+
+**Python is good at:**
 Scheduling
 Dependencies
 Retries
@@ -703,6 +1127,8 @@ send_alert()
    Calculate                Monitoring
 
 -----------------------------------------------------------------------------------------------------------------------
+
+
 
 # how DataSwarm organizes and runs pipelines
 
@@ -1156,100 +1582,99 @@ Now you remove dep_list.
 UPM = “Look at my SQL and automatically figure out what data this pipeline needs before running.”
 
 
-# Presto and Spark: Querying the warehouse
-### Presto and Spark: Querying the warehouse
 
-This section is basically about **how Meta processes data stored in its data warehouse**.
+# analytical library 
 
-* **Presto** → mainly used to run SQL queries interactively and quickly.
-* **Spark** → mainly used for large-scale data processing and more complex transformations.
-* Both can **read data from the warehouse** and process it.
-* The choice depends on the type and scale of the workload.
+1. **The problem**
 
-For your Data Engineering preparation, understand the basic difference:
+<!-- Some pipelines are repetitive and complicated. -->
 
-> **Presto = SQL query engine**
-> **Spark = distributed data processing engine**
+--------------------------------------------------------------------------------------------------
 
-This paragraph gives you the **real-world reason for choosing Presto vs Spark**.
+**For example:**
 
-### What you should remember
+Growth accounting
+Retention analysis
+Digest tables
 
-| Presto                            | Spark                                 |
-| --------------------------------- | ------------------------------------- |
-| Mainly SQL queries                | Heavy data processing                 |
-| Usually faster for normal queries | Better for complex/heavy workloads    |
-| Good for ad-hoc analysis          | Good for expensive joins              |
-| Lower memory requirement          | Can handle higher memory requirements |
+Writing **all the SQL and pipeline dependencies manually can become huge** and difficult to maintain.
 
-### Important point
+So Meta created **analytics libraries + UPM that can generate these pipelines automatically.**
 
-At Meta, engineers **mostly write SQL**:
+-------------------------------------------------------------------------------------------------
 
-* Presto SQL
-* Spark SQL
+## **What the code is doing**
 
-They can also use **Python, Java, Scala APIs** with Spark when transformations become more complex.
+<!-- The engineer gives a specification: -->
 
-### Real-world example
+Source dataset
+     ↓
+Dimensions
+     ↓
+Metrics
+     ↓
+Generate pipeline
 
-Suppose you need:
+**In the example, the dimensions are:**
 
-**Simple query:**
+product
+country
+has_long_session
 
-```sql
-SELECT country, COUNT(*)
-FROM users
-GROUP BY country;
-```
+**And the metrics are:**
 
-→ **Presto** is usually a good choice.
+total_session_time_minutes
+total_distinct_users_hll
 
-**Very heavy processing:**
+The library then generates the actual pipeline.
 
-```text
-Huge datasets
-+ multiple expensive JOINs
-+ complex transformations
-+ high memory requirement
-```
+---------------------------------------------------------------------------------------------
 
-→ **Spark** is more suitable.
+What is has_long_session?
 
-### One important Meta-scale point
+MAX(session_length_minutes) >= 60
 
-They say scanning **a few billion rows** can still be considered a **light query at Meta scale**.
+means 
+Did this group have a session lasting at least 60 minutes?
 
-You don't need to memorize that number. The important lesson is:
+So it creates a boolean-like dimension:
+true / false
 
-> **Tool choice depends on workload, not simply on the amount of data.**
+-----------------------------------------------------------------------
+What is total_session_time_minutes?
 
-For your preparation, this level is enough.
+SUM(session_length_minutes)
+
+Add all session times together.
+
+-------------------------------------------------------------------------------
+What is total_distinct_users_hll?
+
+This is the interesting part.
+
+APPROX_SET(user_id)
+
+uses HyperLogLog (HLL) to approximately count unique users.
+
+Instead of calculating:
+
+Exactly how many unique users?
+
+it calculates:
+
+Approximately how many unique users?
+
+This is useful when you have billions of users, because exact distinct counting can be expensive.
+
+---------------------------------------------------------------------------
+core idea :- 
+
+Analytics libraries let engineers describe what they want, and the library automatically generates the complex pipeline needed to produce it.
 
 
-## With Spark, Python, Java, and Scala are programming languages used to control Spark.
 
-Think of it like this:
 
-Python / Java / Scala
-        ↓
-    Spark API
-        ↓
-   Spark Engine
-        ↓
-Distributed processing
 
-Why use Python/Java/Scala?
-
-<!-- SQL is excellent for normal transformations.
-
-Programming APIs become useful when you need: -->
-
-Complex transformation logic
-Loops/conditions
-Custom functions
-More control over processing
-Integration with other applications
 
 # conclusion 
 ![alt text](image-4.png)
@@ -1288,7 +1713,7 @@ Cross-cutting layers — governance, quality, lineage, security
 ## data sources 
 Example
 
-Imagine an e-commerce company.
+<!-- Imagine an e-commerce company. -->
 
 Data might come from:
 
@@ -1311,8 +1736,8 @@ Employee/customer data → Internal app
 <!-- The Data Engineer's job starts when this data needs to be brought into the data platform. -->
 
 The source system is designed primarily to run the application.
-
-The data platform is designed primarily to store, process, and analyze data.
+<!-- 
+The data platform is designed primarily to store, process, and analyze data. -->
 
 ## batch and streaming 
 
@@ -1619,7 +2044,95 @@ At large companies like Meta, they become critical infrastructure because millio
 
 ### Core idea:- A production data pipeline needs not only processing, but also quality, monitoring, lineage, governance, and security.
 
-# additional 
+# monitoring and operation 
+![alt text](image-5.png)
+
+This section is about **how Data Engineers monitor pipelines after they are created**.
+
+CDM = Central Data Manager
+
+**Think of CDM as:**
+
+Airflow UI + pipeline monitoring + debugging tools
+
+The screenshot shows pipelines and their individual tasks.
+
+---------------------------------------------------------------
+## What can engineers do?
+
+1. Find failures
+
+Pipeline
+   ↓
+Task failed
+   ↓
+CDM
+   ↓
+Open logs → find error
+
+2. Backfill
+
+If yesterday's data failed, you can rerun the pipeline for that specific date.
+
+Missing 2026-08-16
+        ↓
+Backfill
+        ↓
+Generate 2026-08-16 data
+
+3. Find dependencies
+
+If your pipeline is waiting for another table:
+
+Pipeline A
+    ↓ waits for
+Pipeline B
+    ↓ waits for
+Pipeline C
+
+**CDM can navigate through these dependencies.**
+
+4. Find the root cause
+
+This is particularly useful.
+
+If:
+
+A is stuck
+ ↓
+waiting for B
+ ↓
+B waiting for C
+ ↓
+C failed
+
+CDM can identify C as the root cause instead of making the engineer manually investigate everything.
+
+5. Monitor SLAs
+
+If a required partition hasn't arrived on time:
+
+Expected: 10:00 AM
+Actual:   11:30 AM
+        ↓
+Alert
+
+6. Data quality
+
+It can monitor checks such as:
+
+row count > 0
+no NULL customer_id
+no duplicate IDs
+
+--------------------------------------------------------------
+
+## Core idea
+
+Building a pipeline is only half the job. Operating, monitoring, debugging, and maintaining it is the other half.
+
+
+
 # additonal 01 
 ![Distributed Database Architecture Diagram](image.png)
 
@@ -1890,4 +2403,4 @@ That's how you get both:
 This is exactly why technologies like **Apache Iceberg** are important in modern data platforms.
 
 
-# additional 03 
+
