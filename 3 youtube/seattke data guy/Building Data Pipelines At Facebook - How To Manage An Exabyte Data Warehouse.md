@@ -717,6 +717,10 @@ But:
 -----------------------------------------------------------------------------------------------
 
 # Daiquery & Bento: Query and analysis notebooks ( raptrox)
+it is a webbase notebook feature 
+
+which acts as a single entrypoint to query any data source:(the warehouse , scuba and plently of others too)
+
 This section introduces two notebook tools at Meta: Daiquery and Bento.
 
 **Daiquery**
