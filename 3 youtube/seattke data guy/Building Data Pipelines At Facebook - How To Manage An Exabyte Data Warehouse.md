@@ -1,6 +1,6 @@
 # Building Data Pipelines At Facebook - How To Manage An Exabyte Data Warehouse (Data engineering at Meta: High-Level Overview of the internal tech stack)
 
-#  Data Locality & Distributed Data Management
+# 1 Data Locality & Distributed Data Management
 
 Sure. The problem is basically **data is spread across different physical locations**.
 
@@ -126,7 +126,7 @@ For your system-design notes, I'd write:
 Problem: Cross-namespace data access
 Solution: Cross-namespace table replication with automatic synchronization.
 
-# Large-Scale Data Scanning & Partitioning
+# 2 Large-Scale Data Scanning & Partitioning
 A data warehouse table can contain **billions or trillions of rows**.
 
 If a query asks for only recent data, the system would have to scan a huge amount of unnecessary data.
@@ -248,7 +248,7 @@ That's much better for large-scale processing.
 
 ---------------------------------------------------------------------------------------------------------------------------
 
-# Data Retention
+# 3 Data Retention
 
 **Problem**
 
@@ -323,7 +323,7 @@ If someone finds incorrect data or has a question, they know **exactly which tea
 
 ---------------------------------------------------------------------------------------------------------------------------------
 
-# How does data get INTO the warehouse?
+# 4 How does data get INTO the warehouse?
 
 ![alt text](image-2.png)
 
@@ -506,7 +506,7 @@ DataSwarm = a system for defining and automatically running data workflows/pipel
 
 ----------------------------------------------------------------------------------------------------------------------------------
 
-# Data discovery, data catalog
+# 5 Data discovery, data catalog
 
 Meta has millions of tables in its huge data warehouse.
 But there may be thousands of tables with similar names.
@@ -542,7 +542,7 @@ and trace it backward.
 **Solution**: Build a **data catalog + search engine + lineage system** that helps users discover trustworthy datasets and understand their dependencies.
 
 
-# Presto and Spark: Querying the warehouse
+# 6 Presto and Spark: Querying the warehouse
 ### Presto and Spark: Querying the warehouse
 
 This section is basically about **how Meta processes data stored in its data warehouse**.
@@ -637,7 +637,7 @@ Custom functions
 More control over processing
 Integration with other applications
 
-# Scuba: Real-time analytics
+# 7 Scuba: Real-time analytics
 **Problem**
 
 Facebook generates huge amounts of logs continuously.
@@ -716,7 +716,7 @@ But:
 
 -----------------------------------------------------------------------------------------------
 
-# Daiquery & Bento: Query and analysis notebooks ( raptrox)
+# 8 Daiquery & Bento: Query and analysis notebooks ( raptrox)
 it is a webbase notebook feature 
 
 which acts as a single entrypoint to query any data source:(the warehouse , scuba and plently of others too)
@@ -775,7 +775,7 @@ Simple way to remember:
 Daiquery = Query quickly
 Bento = Query + Analyze + Experiment
 
-# Unidash = Meta's dashboarding system
+# 9 Unidash = Meta's dashboarding system
 This section is about Unidash = Meta's dashboarding system.
 
 **1. What is Unidash?**
@@ -871,7 +871,7 @@ Dashboard → don't repeatedly scan huge data → pre-aggregate or cache data �
 
 --------------------------------------------------------------------------
 
-# software development 
+# 10 software development 
 
 **What code do Data Engineers write?**
 
@@ -928,7 +928,7 @@ Pipeline A  Pipeline B  Tools
 **This is called a monorepo** or, in their case, a near-monorepo because some related repositories are separate.
 
 
-# Writing Data Pipelines
+# 11 Writing Data Pipelines
 
 **The blog means:**
 
@@ -1136,7 +1136,7 @@ send_alert()
 
 
 
-# how DataSwarm organizes and runs pipelines
+# 12  how DataSwarm organizes and runs pipelines
 
 ### 1. DataSwarm
 
@@ -1206,7 +1206,7 @@ A → B → C → D ✅
 
 This is basically the same core idea you'll see later with **Airflow DAGs and operators**.
 
-# different types of operators in DataSwarm 
+# 13 different types of operators in DataSwarm 
 
 Remember:
 
@@ -1336,31 +1336,9 @@ So the big idea is:
 
 > **DataSwarm provides different operators as building blocks, and you connect those operators to create a complete DAG/pipeline.**
 
-# **Predecessor = something that came before and influenced/replaced by something newer.**
 
-So when the blog says:
 
-> **DataSwarm is a predecessor to Airflow**
-
-It means:
-
-```text
-DataSwarm
-   ↓
-Earlier system
-   ↓
-Airflow
-   ↓
-Newer/generalized system
-```
-
-Facebook built **DataSwarm first** to orchestrate pipelines. Later, **Airflow** was developed with similar core ideas like **DAGs, operators, scheduling, and dependencies**.
-
-So simply:
-
-> **DataSwarm was an earlier system whose ideas came before Airflow.**
-
-# code example 
+# 14 code example 
 Yes bro. This code is showing a **simple DataSwarm pipeline with 3 steps**.
 
 Think of it as:
@@ -1532,7 +1510,7 @@ If there is an error in any of the SQL statements, the custom linter will displa
 
 <!-- The linter checks the SQL before the pipeline runs: -->
 
-# upm :- advanced pipeline features 
+# 15 upm :- advanced pipeline features 
 Normally: Engineers manually tell the pipeline what data it must wait for.
 
 Example:
@@ -1589,7 +1567,7 @@ UPM = “Look at my SQL and automatically figure out what data this pipeline nee
 
 
 
-# analytical library 
+# 16 analytical library 
 
 1. **The problem**
 
@@ -1682,7 +1660,7 @@ Analytics libraries let engineers describe what they want, and the library autom
 
 
 
-# conclusion 
+# 17 conclusion 
 ![alt text](image-4.png)
 
 Overall flow
@@ -2050,7 +2028,7 @@ At large companies like Meta, they become critical infrastructure because millio
 
 ### Core idea:- A production data pipeline needs not only processing, but also quality, monitoring, lineage, governance, and security.
 
-# monitoring and operation 
+# 18 monitoring and operation 
 ![alt text](image-5.png)
 
 This section is about **how Data Engineers monitor pipelines after they are created**.
@@ -2410,3 +2388,27 @@ This is exactly why technologies like **Apache Iceberg** are important in modern
 
 
 
+
+# **Predecessor = something that came before and influenced/replaced by something newer.**
+
+So when the blog says:
+
+> **DataSwarm is a predecessor to Airflow**
+
+It means:
+
+```text
+DataSwarm
+   ↓
+Earlier system
+   ↓
+Airflow
+   ↓
+Newer/generalized system
+```
+
+Facebook built **DataSwarm first** to orchestrate pipelines. Later, **Airflow** was developed with similar core ideas like **DAGs, operators, scheduling, and dependencies**.
+
+So simply:
+
+> **DataSwarm was an earlier system whose ideas came before Airflow.**
