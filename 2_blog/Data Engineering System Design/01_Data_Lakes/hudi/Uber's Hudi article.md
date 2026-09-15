@@ -1,7 +1,7 @@
 # Apache Hudi™ at Uber: Engineering for Trillion-Record-Scale Data Lake Operations
-# Article 1 - Section 1
+ link :- https://www.uber.com/in/en/blog/apache-hudi-at-uber/
 
-The Foundation of Uber's Data Platform
+# Section 1 :- The Foundation of Uber's Data Platform
 
 ## 1 Business Problem
 
@@ -743,7 +743,7 @@ Microservices
 
  Hudi becomes the single source of truth for many teams.
 
- ## Understanding the Numbers
+## Understanding the Numbers
 
  19,500 datasets
 
@@ -867,10 +867,307 @@ Better maintenance jobs
 This is how large companies innovate.
 
 
+# section 4 classifying Uber's 17,200 Hudi tables into 3 types based on how the data changes.
+
+## 1. Append-Only Datasets — 11,200 tables
+
+Append-only = old data doesn't change; you only add new data.
+
+Day 1 → 100 records
+Day 2 → +200 records
+Day 3 → +300 records
+
+Uber uses Hudi Bulk Insert to quickly load billions of new rows into the data lake.
+
+## 2. Upsert-Heavy Datasets — 4,400 tables
+
+Here the data changes after it has already been stored.
+
+Uber uses indexes to quickly find the existing record instead of scanning the entire huge dataset.
+
+Incoming record
+      ↓
+   Index
+      ↓
+Find existing record
+      ↓
+Update / Insert
+
+## 3.Derived Datasets — 1,600 
+
+Uber uses **Spark** and **Hudi Streamer** for this.
+The important concept here is **incremental reads.**
+
+## The interesting System Design point
+ Even if the source table is append-only, the **derived table may need updates.**
+
+ example :- 
+
+The aggregate for yesterday is now wrong:
+Yesterday Sales = $100,000
+Late event = +$500
+        ↓
+Correct Sales = $100,500
+
+
+                DATASET TYPES
+                     │
+       ┌─────────────┼─────────────┐
+       ↓             ↓             ↓
+ Append-only      Upsert        Derived
+       │             │             │
+ Bulk Insert      Indexes      Incremental Reads
+       │             │             │
+ High ingestion   Fast updates  Process changes
+
+ ## Main challenges: 
+ late data, updates/deletes, duplicates, schema changes, corrections/rollbacks, and maintaining correct aggregates.
+
+        Upstream Hudi table
+                ↓
+        Incremental Read
+                ↓
+   New / Updated / Changed records
+                ↓
+       Spark / Hudi Streamer
+                ↓
+      Transform / Join / Aggregate
+                ↓
+        Derived Hudi table
+                ↓
+          UPSERT
+
+| Problem               | How they handle it                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| New data              | Incremental reads pick up only new changes                                                         |
+| Updates               | Hudi tracks changes and derived table can **upsert**                                               |
+| Late-arriving data    | Late changes are picked up incrementally and affected data can be corrected                        |
+| Duplicate processing  | Hudi's record keys/upsert model helps maintain the correct latest record                           |
+| Schema changes        | Hudi supports **schema evolution**                                                                 |
+| Rollback/fix upstream | Incremental processing can consume the corrected changes rather than blindly rebuilding everything |
+| Huge source table     | Don't scan the entire table; use **incremental reads**                                             |
+
+# section 5 HLD 
+![alt text](image.png)
+
+## 1. Storage Layer — where data physically lives
+
+At the bottom:
+
+HDFS
+Cloud Storage
+   ↓
+Mesh Storage Layer
+
+HDFS / Cloud Storage = actual physical storage.
+
+**Hudi does not replace storage. Hudi is a table format/data management layer on top of storage.**
+
+Cloud Storage
+     ↑
+Mesh Storage Layer
+     ↑
+Apache Hudi
+
+## 2. Hudi — the central layer
+          Apache Hudi
+              ↑
+       Table Format
+
+Hudi manages things like:
+
+inserts
+updates/upserts
+deletes
+commits
+incremental reads
+table versions
+file organization
+
+**So instead of applications directly managing thousands of Parquet files**, **they interact with Hudi tables.**
+
+## 3. Writers — putting data into Hudi
+On the left:
+
+Kafka
+  ↓
+Writers
+  ↓
+Hudi
+
+There are mainly two ways data gets written.
+
+### Batch
+
+Spark Batch
+
+Large historical data
+       ↓
+Spark
+       ↓
+Hudi
+
+Used for:
+
+hourly/daily pipelines
+backfills
+reprocessing
+bulk inserts
+large updates
+
+### Streaming
+
+Flink
+
+Kafka/events
+      ↓
+Flink
+      ↓
+Hudi
+
+Used when Uber needs low latency / near-real-time ingestion.
+
+For example:
+
+Event occurs
+    ↓
+Flink
+    ↓
+Hudi
+    ↓
+Available for query
+
+## 4. Readers — getting data from Hudi
+
+             Hudi
+              ↓
+      ┌───────┴───────┐
+      ↓       ↓       ↓
+    Spark   Presto   Flink
+
+Different systems read the same Hudi tables for different purposes.
+
+Spark
+
+Used for:
+
+ETL
+ML
+feature engineering
+complex transformations
+Presto
+
+Used mainly for:
+
+interactive SQL
+analytics
+many users querying simultaneously
+Flink
+
+Can also read/process Hudi data for streaming workloads.
+
+## 5. Table Services — maintaining Hudi
+
+This box is extremely important for system design.
+
+Table Services
+     │
+     ├── Compaction
+     ├── Clean
+     ├── Data Deletion (TTL)
+     ├── Encryption
+     └── Data Optimization
+             ├── Sorting
+             └── Stitching
+
+These are **background maintenance operations.**
+
+Think of it like a **database's maintenance system.**
+
+For example, **after thousands of updates, the files may become inefficient.**
+
+So: 
+
+Continuous writes
+       ↓
+Many files / changes
+       ↓
+Table Services
+       ↓
+Optimize files
+       ↓
+Better query performance
+
+## 6. Management Platform
+
+This is the operational/control side.
+
+Management Platform
+       │
+       ├── Hudi Validation Tool
+       ├── Hudi CLI
+       └── Data Deletion Tool
+
+These tools **help engineers manage, validate, debug and operate Hudi tables.**
+
+## 7. M3 Metrics — observability
+**On the left:**
+
+Hudi
+  ↕
+M3 Metrics
+
+Uber's monitoring system collects things such as:
+
+Write performance
+Read performance
+Commit latency
+Compaction throughput
+File growth
+Table health
+
+**Then alerts can detect:**
+
+SLA missed
+Storage growing unexpectedly
+Compaction problem
+Metadata failure
+Index failure
+
+At Uber's scale, this is not optional.
+
+18,000+ datasets cannot be manually monitored.
+
+## 8. Config Store
+
+On the right:
+
+Config Store
+     ↕
+   Hudi
+
+This stores configuration needed to operate Hudi tables.
+
+For example, different tables may have different:
+
+partitioning
+indexing
+compaction
+cleaning
+performance configurations
+
+# Real company example 
+
+
+
+
+
+
+
 
 # intreview question 
 
-# section 1 
+ section 1 
 ## Why wasn't a traditional data lake sufficient for Uber?
 
 A strong answer would mention:
@@ -881,7 +1178,7 @@ Evolving schemas
 Need for data freshness within minutes
 Requirement for database-like guarantees (such as ACID transactions) on top of scalable data lake storage
 
-# section 2 
+ section 2 
 1. Why are append-only data lakes inefficient for frequently updated data?
 
 Answer:
@@ -945,6 +1242,6 @@ Business requirements drive technology decisions. Uber built Hudi because existi
 
 
 
-# section 3 
+ section 3 
 
 
